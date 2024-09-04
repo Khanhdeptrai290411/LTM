@@ -3,9 +3,10 @@ import threading
 import mysql.connector
 from datetime import datetime
 import connectz
+import bcrypt
 
 HOST = "127.0.0.1"
-SERVER_PORT = 65434
+SERVER_PORT = 65435
 FORMAT = "utf8"
 
 #--------------------DB_connect_-------------------
@@ -41,9 +42,12 @@ def serverSignup(cursor, db_conn, conn):
     while True:  # Lặp lại cho đến khi đăng ký thành công
         # Nhận danh sách thông tin từ client
         lst = Recv(conn)
+        user_name = lst[0]
+        email = lst[1]
+        password_hash = lst[2]
         print(lst, created_at, status)
         try:
-            cursor.execute('INSERT INTO User(user_name, email, password_hash) VALUES (%s, %s, %s)', lst)
+            cursor.execute('INSERT INTO User(user_name, email, password_hash) VALUES (%s, %s, %s)', (user_name, email, password_hash))
             db_conn.commit()
             # Nếu không có lỗi, gửi thông báo thành công và thoát khỏi vòng lặp
             conn.sendall("Signup successful.".encode(FORMAT))
@@ -56,18 +60,33 @@ def serverSignup(cursor, db_conn, conn):
         
 
 
+import bcrypt  # Đảm bảo bạn đã import bcrypt
+
 def serverLogin(cursor, lst, db_conn):
     try: 
         cursor.execute('SELECT password_hash FROM User WHERE user_name = %s AND email = %s', (lst[0], lst[1]))
-        password = cursor.fetchall()
-        data_password = password[0]
-        print(password)
-        if(lst[2]== data_password):
-            print('Login successfully')
+        passwords = lst[2]
+        
+        password = cursor.fetchall()  # Lấy kết quả từ truy vấn
+        if password:
+            data_password = password[0][0]  # Lấy giá trị chuỗi từ tuple
+            print(f"Password from DB: {data_password}")  # In ra giá trị thực tế của password trong DB
+            print(f"Password to compare: {passwords}")  # In ra password người dùng nhập
+
+            # Sử dụng bcrypt để kiểm tra mật khẩu
+            if bcrypt.checkpw(passwords.encode(FORMAT), data_password.encode('utf-8')):
+                print('Login successfully')
+                conn.sendall("Login successfully".encode(FORMAT))
+            else:
+                print('Invalid password')
+                conn.sendall("false".encode(FORMAT))
         else:
-            print('invalid password')
+            print('No matching user found')
+            conn.sendall("User not found".encode(FORMAT))
     except mysql.connector.Error as err:
         print(f"Error: {err}")
+
+
 
 
         
