@@ -6,7 +6,7 @@ import connectz
 import bcrypt
 
 HOST = "127.0.0.1"
-SERVER_PORT = 65435
+SERVER_PORT = 65433
 FORMAT = "utf8"
 
 #--------------------DB_connect_-------------------
@@ -60,7 +60,7 @@ def serverSignup(cursor, db_conn, conn):
         
 
 
-
+import bcrypt  # Đảm bảo bạn đã import bcrypt
 
 def serverLogin(cursor, lst, db_conn):
     try: 
