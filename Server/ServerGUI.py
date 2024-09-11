@@ -6,11 +6,12 @@ import bcrypt
 
 
 HOST = '127.0.0.1'
-PORT = 65435
+PORT = 65433
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
 LOGIN='login'
+SIGNUP='signup'
 FAIL='fail'
 END='x'
 
@@ -39,7 +40,27 @@ def Recv(conn):
         conn.sendall(item.encode(FORMAT))
         item = conn.recv(1024).decode(FORMAT)
     return lst
+def checkSignUp(conn, lst, addr):  # Thêm đối số addr
+    print('Sign Start')
+    try:
+        created_at = datetime.now()
+        status = True
 
+        user_name = lst[0]
+        email = lst[1]
+        password_hash = lst[2]
+        ip_address = addr[0]
+        print(lst, addr, created_at, status)
+
+        cursor.execute('INSERT INTO User(user_name, email, password_hash, ip_address) VALUES (%s, %s, %s, %s)', (user_name, email, password_hash, ip_address))
+        db_conn.commit()
+        conn.sendall(OK.encode(FORMAT))
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        msg = "Error: Email already exists. Please signup again."
+        print(msg)
+        conn.sendall(FAIL.encode(FORMAT))
+    
 def checkLogin(conn,lst):
     print('Login start')
     try:
@@ -82,15 +103,18 @@ def handle_client(conn, addr):
         print(f"Client connected: {addr}")
         while True:
             msg = conn.recv(1024).decode(FORMAT)
-        # Xử lý thông điệp nhận được từ client
-        
-            if(msg==LOGIN):
+            if msg == LOGIN:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
                 lst = Recv(conn)
                 print(lst)
-                checkLogin(conn,lst)
-            
+                checkLogin(conn, lst)
+            elif msg == SIGNUP:
+                print(msg)
+                conn.sendall(msg.encode(FORMAT))
+                lst = Recv(conn)
+                print(lst)
+                checkSignUp(conn, lst, addr)  # Truyền addr vào
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 

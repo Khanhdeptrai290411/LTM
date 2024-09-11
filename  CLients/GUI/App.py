@@ -6,8 +6,9 @@ import SignupPage
 import LoginPage
 import EntryPage
 import HomePage
+import bcrypt
 HOST = "127.0.0.1"
-SERVER_PORT = 65435
+SERVER_PORT = 65433
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -34,7 +35,7 @@ class App(CTk):
             self.frames[F] = frame
         
         # Hiển thị frame đầu tiên (EntryPage)
-        self.show_frame(LoginPage.LogIn)
+        self.show_frame(SignupPage.SignUp)
     
     def show_frame(self, page_class):
         frame = self.frames[page_class]
@@ -47,7 +48,49 @@ class App(CTk):
             client.recv(1024)
         msg = "end"
         client.send(msg.encode(FORMAT))
-        
+    
+    def SignUp(self, curFrame):
+        user_info = []
+        try:
+        # Nhập thông tin người dùng
+            user_name = curFrame.text_user_name.get()
+            user_email = curFrame.text_email.get()
+            user_password = curFrame.text_password.get()
+
+        # Kiểm tra trường hợp trống
+            if user_email == "Email" or user_name == "User Name" or user_password == "Password":
+                curFrame.label_notice.configure(text="Fields cannot be empty")
+                return
+
+        # Tạo hash password
+            salt = bcrypt.gensalt()
+            Passwd2 = bcrypt.hashpw(user_password.encode('utf-8'), salt).decode('utf-8')
+
+        # In thông tin
+            print(f"Email: {user_email}, Password: {user_password}, userName: {user_name}")
+
+        # Gửi SIGNUP yêu cầu đến server
+            option = SIGNUP
+            client.sendall(option.encode(FORMAT))
+
+        # Gửi thông tin người dùng sau khi server đã phản hồi
+            if client.recv(1024).decode(FORMAT) == SIGNUP:
+                user_info.append(user_name)
+                user_info.append(user_email)
+                user_info.append(Passwd2)
+                self.sendList(client, user_info)
+
+            # Nhận thông báo từ server
+                response = client.recv(1024).decode(FORMAT)
+                if response == FALSE:
+                    curFrame.label_notice.configure(text="Email already exists. Please signup again")
+                else:
+                    self.show_frame(LoginPage.LogIn)
+        except Exception as e:
+            print('Error: Server is not responding', str(e))
+    
+             
+                
     def LogIn(self, curFrame):
         user_info = []   
 
