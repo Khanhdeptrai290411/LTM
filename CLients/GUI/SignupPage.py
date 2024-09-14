@@ -36,11 +36,7 @@ class SignUp(CTkFrame):
         set_appearance_mode("light")
         appController.geometry("900x500+300+200")
 #-------------tao frame va anh nene----------------
-<<<<<<< HEAD: CLients/GUI/SignupPage.py
-        image_path = '/media/shen/New Volume/Project/PyThonLearn/ChatPyThon/ CLients/GUI/Images/login.png'
-=======
         image_path = '/home/khanh/Documents/Server/CLients/GUI/Images/login.png'
->>>>>>> UpdateServerUIv1:CLients/GUI/SignupPage.py
         
         image = Image.open(image_path)
         self.my_image = ImageTk.PhotoImage(image)

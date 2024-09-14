@@ -120,7 +120,7 @@ class Main_Screen(customtkinter.CTkFrame):
             contact_button.configure(command=lambda: (self.doimau(contact_button),self.main_screen.changeFrame('Contact')))
             group_chat_button.configure(command=lambda: (self.doimau(group_chat_button),self.main_screen.changeFrame('Group Chat')))
             meeting_button.configure(command=lambda: (self.doimau(meeting_button),self.main_screen.changeFrame('Group Chat')))
-            back_button.configure(command=lambda: (self.doimau(back_button),self.main_screen.backToLoginFrame()))
+            back_button.configure(command=lambda: (self.doimau(back_button),appController.Logout()))
    
             Home_button.pack(side='left')
             document_button.pack(side='left')
@@ -132,7 +132,7 @@ class Main_Screen(customtkinter.CTkFrame):
             self.pack(fill='both',side='top')
                 
         def creatButton(self,label_text,icon):
-            icon_image = Image.open('images/home.png')
+            icon_image = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/home.png')
 
             icon_image=customtkinter.CTkImage(icon_image)
         

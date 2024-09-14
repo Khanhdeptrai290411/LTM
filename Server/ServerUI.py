@@ -3,9 +3,10 @@ from customtkinter import *
 import threading
 
 HOST = "192.168.110.162"
-SERVER_PORT = 65432
-FORMAT = 'utf-8'
-GET_CLIENTS='getclients'
+SERVER_PORT = 65433
+GET_CLIENTS = 'getclients'
+FORMAT = "utf8"
+
 class ServerPage(CTk):
     def __init__(self):
         super().__init__()
@@ -41,19 +42,33 @@ class ServerPage(CTk):
     def Recv(self, client):
         data = ""
         while True:
-            part = client.recv(1024).decode(FORMAT)
-            if 'end' in part:
-                data += part.split('end')[0]
+            try:
+                part = client.recv(1024).decode(FORMAT)
+                
+                # Check if connection is closed or if we receive an empty string
+                if not part:
+                    print("Received empty data, connection may be closed")
+                    break
+
+                if 'end' in part:
+                    data += part.split('end')[0]
+                    break
+                
+                data += part
+
+            except socket.error as e:
+                print(f"Error receiving data: {e}")
                 break
-            data += part
+
         return data.split("\n")
+
 
     def receive_data(self):
         try:
             option = GET_CLIENTS
             client.sendall(option.encode(FORMAT))
-            
-            print(client.recv(1024).decode(FORMAT))
+            uu=client.recv(1024).decode(FORMAT)#nhan phan hoi rang da nhan lenh login tu server
+            print(uu)
             # Receive and process the response from the server
             recv_list = self.Recv(client)
             print(recv_list)
@@ -71,9 +86,10 @@ class ServerPage(CTk):
             if item:  # Avoid inserting empty strings
                 self.data.insert("end", item + "\n")
 
-# Khởi tạo client socket
+
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, SERVER_PORT))
+
 if __name__ == "__main__":
     app = ServerPage()
     app.mainloop()
