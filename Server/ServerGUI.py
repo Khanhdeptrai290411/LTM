@@ -1,4 +1,5 @@
 import socket
+from telnetlib import LOGOUT
 import threading
 import time
 import mysql.connector
@@ -8,7 +9,7 @@ import bcrypt
 
 
 HOST = '192.168.110.162'
-PORT = 65433
+PORT = 65435
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
@@ -17,7 +18,7 @@ SIGNUP='signup'
 GET_CLIENTS='getclients'
 FAIL='fail'
 END='x'
-
+LOGOUT='logout'
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
     host='localhost',
@@ -53,6 +54,9 @@ def Recv(conn):
         conn.sendall(item.encode(FORMAT))
         item = conn.recv(1024).decode(FORMAT)
     return lst
+
+
+
 def checkSignUp(conn, lst, addr):  # Thêm đối số addr
     print('Sign Start')
     try:
@@ -77,7 +81,9 @@ def checkSignUp(conn, lst, addr):  # Thêm đối số addr
         msg = "Error: Email already exists. Please signup again."
         print(msg)
         conn.sendall(FAIL.encode(FORMAT))
-    
+        
+        
+        
 def checkLogin(conn, lst):
     print('Login start')
     print(f"Received list: {lst}")
@@ -111,20 +117,23 @@ def checkLogin(conn, lst):
             conn.sendall("User not found".encode(FORMAT))
     except mysql.connector.Error as err:
         print(f"Error: {err}")
-
-# def send_live_accounts_to_gui():
-#     # Gửi dữ liệu Live_Account đến client GUI qua một socket khác hoặc một cách tương tự
-#     gui_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     gui_socket.connect(('localhost', PORT_GUI))  # Địa chỉ và cổng của GUI
-#     while True:
-#         data = ' '.join(Live_Account)
-#         gui_socket.sendall(data.encode(FORMAT))
-#         time.sleep(5)  # Cập nhật mỗi 5 giây
-#     gui_socket.close()
-
-# # Chạy một thread riêng để gửi dữ liệu
-# threading.Thread(target=send_live_accounts_to_gui).start()        
-   
+    
+def Remove_LiveAccount(conn, addr):
+    print('lougout start')
+    for row in Live_Account:
+        parse = row.find("-")
+        parse_check = row[:parse]
+        if parse_check == addr[0]:
+            parse = row.find("-")
+            Ad.remove(parse_check)
+            username = row[(parse + 1):]
+            ID.remove(username)
+            Live_Account.remove(row)
+            conn.sendall("True".encode(FORMAT))
+            return  # Exit after successful removal
+        else:
+            conn.sendall("False".encode(FORMAT))  # If not found, send failure
+    
         
         
     
@@ -150,7 +159,11 @@ def handle_client(conn, addr):
                 conn.sendall(msg.encode(FORMAT))
                 print(Live_Account)
                 send_Clients(conn,Live_Account)
+            elif msg == LOGOUT:
+                print(msg)
+                Remove_LiveAccount(conn,addr)
                 
+                    
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
