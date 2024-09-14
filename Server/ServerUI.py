@@ -3,7 +3,7 @@ from customtkinter import *
 import threading
 
 HOST = "192.168.110.162"
-SERVER_PORT = 65435
+SERVER_PORT = 65433
 GET_CLIENTS = 'getclients'
 FORMAT = "utf8"
 
@@ -42,12 +42,26 @@ class ServerPage(CTk):
     def Recv(self, client):
         data = ""
         while True:
-            part = client.recv(1024).decode(FORMAT)
-            if 'end' in part:
-                data += part.split('end')[0]
+            try:
+                part = client.recv(1024).decode(FORMAT)
+                
+                # Check if connection is closed or if we receive an empty string
+                if not part:
+                    print("Received empty data, connection may be closed")
+                    break
+
+                if 'end' in part:
+                    data += part.split('end')[0]
+                    break
+                
+                data += part
+
+            except socket.error as e:
+                print(f"Error receiving data: {e}")
                 break
-            data += part
+
         return data.split("\n")
+
 
     def receive_data(self):
         try:
