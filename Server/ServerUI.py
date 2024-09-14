@@ -3,10 +3,9 @@ from customtkinter import *
 import threading
 
 HOST = "192.168.110.162"
-SERVER_PORT = 65435
-GET_CLIENTS = 'getclients'
-FORMAT = "utf8"
-
+SERVER_PORT = 65432
+FORMAT = 'utf-8'
+GET_CLIENTS='getclients'
 class ServerPage(CTk):
     def __init__(self):
         super().__init__()
@@ -53,8 +52,8 @@ class ServerPage(CTk):
         try:
             option = GET_CLIENTS
             client.sendall(option.encode(FORMAT))
-            uu=client.recv(1024).decode(FORMAT)#nhan phan hoi rang da nhan lenh login tu server
-            print(uu)
+            
+            print(client.recv(1024).decode(FORMAT))
             # Receive and process the response from the server
             recv_list = self.Recv(client)
             print(recv_list)
@@ -72,10 +71,9 @@ class ServerPage(CTk):
             if item:  # Avoid inserting empty strings
                 self.data.insert("end", item + "\n")
 
-
+# Khởi tạo client socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, SERVER_PORT))
-
 if __name__ == "__main__":
     app = ServerPage()
     app.mainloop()

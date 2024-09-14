@@ -9,7 +9,7 @@ import bcrypt
 
 
 HOST = '192.168.110.162'
-PORT = 65435
+PORT = 65432
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
