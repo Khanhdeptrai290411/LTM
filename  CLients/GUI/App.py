@@ -6,8 +6,14 @@ import SignupPage
 import LoginPage
 import EntryPage
 import HomePage
+import Document_frame
+
+import main_UI
+
+
+
 import bcrypt
-HOST = "127.0.0.1"
+HOST = "192.168.110.162"
 SERVER_PORT = 65433
 FORMAT = "utf8"
 OK = 'ok'
@@ -16,9 +22,10 @@ SIGNUP='signup'
 FAIL='fail'
 END='x'
 class App(CTk):
+    
     def __init__(self):
         super().__init__()
-        self.geometry("900x500+300+200")
+        self.geometry("900x500+300+200+700")
         set_appearance_mode("light")  # Bạn có thể chuyển thành "dark" để thử nghiệm
         self.title("C")
         
@@ -29,18 +36,18 @@ class App(CTk):
         # Dictionary to hold frames
         self.frames = {}
         
-        for F in (SignupPage.SignUp, LoginPage.LogIn, EntryPage.Entry,HomePage.Home):  # Sử dụng các lớp, không phải module
+        for F in (SignupPage.SignUp, LoginPage.LogIn, EntryPage.Entry,HomePage.Home,main_UI.Main_Screen):  # Sử dụng các lớp, không phải module
             frame = F(container, self)  # Tạo một frame từ lớp đã nhập
             frame.grid(row=0, column=0, sticky='nsew')
             self.frames[F] = frame
         
         # Hiển thị frame đầu tiên (EntryPage)
-        self.show_frame(SignupPage.SignUp)
-    
+        # self.show_frame(SignupPage.SignUp)
+        self.show_frame(LoginPage.LogIn)    
     def show_frame(self, page_class):
         frame = self.frames[page_class]
         frame.tkraise()
-        
+
     
     def sendList(self,client, list):
         for item in list:
@@ -82,10 +89,10 @@ class App(CTk):
 
             # Nhận thông báo từ server
                 response = client.recv(1024).decode(FORMAT)
-                if response == FALSE:
+                if response == FAIL:
                     curFrame.label_notice.configure(text="Email already exists. Please signup again")
                 else:
-                    self.show_frame(LoginPage.LogIn)
+                    self.show_frame(main_UI.Main_Screen)
         except Exception as e:
             print('Error: Server is not responding', str(e))
     
@@ -124,10 +131,14 @@ class App(CTk):
                 curFrame.label_notice.configure(text="Invalid Password")
                 return
             else:
-                self.show_frame(HomePage.Home)
+                self.show_frame(main_UI.Main_Screen)
             
         except Exception as e:
             print('Error: Server is not responding', str(e))
+    
+    # def TestFrame(self):
+    # show_frame(main_UI.Main_Screen)
+
             
             
     
@@ -139,4 +150,6 @@ client.connect((HOST, SERVER_PORT))
 
 # Tạo và chạy ứng dụng
 home = App()
+
 home.mainloop()
+

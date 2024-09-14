@@ -35,7 +35,7 @@ class SignUp(CTkFrame):
         self.configure(width=925, height=500, fg_color='#fff')
         set_appearance_mode("light")
 #-------------tao frame va anh nene----------------
-        image_path = '/home/khanh/Documents/Server/ CLients/GUI/Images/login.png'
+        image_path = '/media/shen/New Volume/Project/PyThonLearn/ChatPyThon/ CLients/GUI/Images/login.png'
         
         image = Image.open(image_path)
         self.my_image = ImageTk.PhotoImage(image)

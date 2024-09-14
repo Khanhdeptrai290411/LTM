@@ -82,7 +82,7 @@ class App(CTk):
 
             # Nhận thông báo từ server
                 response = client.recv(1024).decode(FORMAT)
-                if response == FALSE:
+                if response == FAIL:
                     curFrame.label_notice.configure(text="Email already exists. Please signup again")
                 else:
                     self.show_frame(LoginPage.LogIn)

@@ -9,3 +9,5 @@ class Home(CTkFrame):
         #--------components
         label=CTkLabel(self,text="Home")
         label.pack()
+        
+    
