@@ -13,7 +13,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "127.0.0.1"
+HOST = "192.168.1.8"
 SERVER_PORT = 65433
 FORMAT = "utf8"
 OK = 'ok'
@@ -43,7 +43,7 @@ class App(CTk):
             self.frames[F] = frame
         
         # Hiển thị frame đầu tiên (EntryPage)
-        self.show_frame(SignupPage.SignUp)
+        self.show_frame(LoginPage.LogIn)
     
     def show_frame(self, page_class):
         frame = self.frames[page_class]
