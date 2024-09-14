@@ -3,7 +3,7 @@ from customtkinter import *
 import threading
 
 HOST = "192.168.110.162"
-SERVER_PORT = 65433
+SERVER_PORT = 65435
 GET_CLIENTS = 'getclients'
 FORMAT = "utf8"
 
