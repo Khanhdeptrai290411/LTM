@@ -11,13 +11,14 @@ import HomePage
 
 import bcrypt
 HOST = "192.168.110.162"
-SERVER_PORT = 65433
+SERVER_PORT = 65435
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
 SIGNUP='signup'
 FAIL='fail'
 END='x'
+LOGOUT='logout'
 class App(CTk):
     def __init__(self):
         super().__init__()
@@ -141,6 +142,19 @@ class App(CTk):
         except Exception as e:
             print('Error: Server is not responding', str(e))
             
+    def Logout(self):
+        try:
+            option = LOGOUT
+            client.sendall(option.encode(FORMAT))
+            response = client.recv(1024).decode(FORMAT)  # Receive response from the server
+            print(response)
+            if response == "True":
+                self.show_frame(LoginPage.LogIn)
+            else:
+                print("Logout failed.")
+        except Exception as e:
+            print('Error: Server is not responding', str(e))
+
             
     
 
