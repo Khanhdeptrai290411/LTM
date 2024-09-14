@@ -13,8 +13,8 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.110.162"
-SERVER_PORT = 65432
+HOST = "127.0.0.1"
+SERVER_PORT = 65433
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -37,17 +37,30 @@ class App(CTk):
         # Dictionary to hold frames
         self.frames = {}
         
-        for F in (SignupPage.SignUp, LoginPage.LogIn, EntryPage.Entry,HomePage.Home,main_UI.Main_Screen):  # Sử dụng các lớp, không phải module
+        for F in (SignupPage.SignUp, LoginPage.LogIn,HomePage.Home,main_UI.Main_Screen):  # Sử dụng các lớp, không phải module
             frame = F(container, self)  # Tạo một frame từ lớp đã nhập
             frame.grid(row=0, column=0, sticky='nsew')
             self.frames[F] = frame
         
         # Hiển thị frame đầu tiên (EntryPage)
-        self.show_frame(EntryPage.Entry)
+        self.show_frame(SignupPage.SignUp)
     
     def show_frame(self, page_class):
         frame = self.frames[page_class]
         frame.tkraise()
+
+        if page_class == main_UI.Main_Screen:
+            # Điều chỉnh kích thước của cửa sổ
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            window_width = int(screen_width * 0.8)  # Ví dụ: 80% chiều rộng màn hình
+            window_height = int(screen_height * 0.8)  # Ví dụ: 80% chiều cao màn hình
+            x = (screen_width - window_width) // 2
+            y = (screen_height - window_height) // 2
+            self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        else:
+            # Đặt lại kích thước khi quay lại các frame khác
+            self.geometry("900x500+300+200")
 
     
     def sendList(self,client, list):
