@@ -1,17 +1,20 @@
 import socket
 import threading
+import time
 import mysql.connector
 from datetime import datetime
 import bcrypt
+ 
 
 
-HOST = '127.0.0.1'
+HOST = '192.168.110.162'
 PORT = 65433
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
 LOGIN='login'
 SIGNUP='signup'
+GET_CLIENTS='getclients'
 FAIL='fail'
 END='x'
 
@@ -31,6 +34,16 @@ server_socket.listen()
 
 print(f'Server running on {HOST}:{PORT}')
 print('Waiting for clients...')
+Live_Account=[]
+ID=[]
+Ad=[]
+def send_Clients(conn, clients_list):
+    print("send client start")
+    # Send the list of clients
+    data = "\n".join(clients_list) + "\nend"
+    conn.sendall(data.encode(FORMAT))
+
+        
 
 def Recv(conn):
     lst = []
@@ -51,52 +64,69 @@ def checkSignUp(conn, lst, addr):  # Thêm đối số addr
         password_hash = lst[2]
         ip_address = addr[0]
         print(lst, addr, created_at, status)
-
         cursor.execute('INSERT INTO User(user_name, email, password_hash, ip_address) VALUES (%s, %s, %s, %s)', (user_name, email, password_hash, ip_address))
         db_conn.commit()
         conn.sendall(OK.encode(FORMAT))
+        Ad.append(ip_address)
+        ID.append(email)
+        account=str(Ad[Ad.__len__()-1])+"-"+str(ID[ID.__len__()-1])
+        Live_Account.append(account)
+        print(Live_Account)
     except mysql.connector.Error as err:
         print(f"Error: {err}")
         msg = "Error: Email already exists. Please signup again."
         print(msg)
         conn.sendall(FAIL.encode(FORMAT))
     
-def checkLogin(conn,lst):
+def checkLogin(conn, lst):
     print('Login start')
+    print(f"Received list: {lst}")
+    print(f"Current Ad list: {Ad}")
+    print(f"Current ID list: {ID}")
     try:
-        # mail = conn.recv(1024).decode(FORMAT)  # Receive email
-        # conn.sendall(mail.encode(FORMAT))  # Send back 'mail' to confirm receipt
-
-        # paswd = conn.recv(1024).decode(FORMAT)  # Receive password
-        # conn.sendall(paswd.encode(FORMAT))  # Send back 'password' to confirm receipt
+        if len(lst) < 2:
+            print(f"Error: Received list does not have enough elements: {lst}")
+            conn.sendall(FAIL.encode(FORMAT))
+            return
         
         cursor.execute('SELECT password_hash FROM User WHERE email = %s', (lst[0],))
-        result = cursor.fetchall()  # Get a single result
-        paswd= lst[1]
+        result = cursor.fetchall()
+        paswd = lst[1]
         msg = OK
+        ip_address = addr[0]
         if result:
-            data_password = result[0][0]  # Extract password hash from the database
-            print(f"Password from DB: {data_password}")
-            print(f"Password to compare: {paswd}")
-
-            # Check password with bcrypt
+            data_password = result[0][0]
             if bcrypt.checkpw(paswd.encode(FORMAT), data_password.encode('utf-8')):
-                msg=OK
-                print(msg)
+                msg = OK
                 conn.sendall(msg.encode(FORMAT))
+                Ad.append(ip_address)
+                ID.append(lst[0])
+                account = str(Ad[Ad.__len__()-1]) + "-" + str(ID[ID.__len__()-1])
+                Live_Account.append(account)
+                print(Live_Account)
             else:
-                msg=FAIL
-                print(msg)
+                msg = FAIL
                 conn.sendall(msg.encode(FORMAT))
         else:
-            print('No matching user found')
             conn.sendall("User not found".encode(FORMAT))
     except mysql.connector.Error as err:
         print(f"Error: {err}")
 
+# def send_live_accounts_to_gui():
+#     # Gửi dữ liệu Live_Account đến client GUI qua một socket khác hoặc một cách tương tự
+#     gui_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     gui_socket.connect(('localhost', PORT_GUI))  # Địa chỉ và cổng của GUI
+#     while True:
+#         data = ' '.join(Live_Account)
+#         gui_socket.sendall(data.encode(FORMAT))
+#         time.sleep(5)  # Cập nhật mỗi 5 giây
+#     gui_socket.close()
 
-
-
+# # Chạy một thread riêng để gửi dữ liệu
+# threading.Thread(target=send_live_accounts_to_gui).start()        
+   
+        
+        
     
 def handle_client(conn, addr):
     try:
@@ -115,6 +145,12 @@ def handle_client(conn, addr):
                 lst = Recv(conn)
                 print(lst)
                 checkSignUp(conn, lst, addr)  # Truyền addr vào
+            elif msg == GET_CLIENTS:
+                print(msg)
+                conn.sendall(msg.encode(FORMAT))
+                print(Live_Account)
+                send_Clients(conn,Live_Account)
+                
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
