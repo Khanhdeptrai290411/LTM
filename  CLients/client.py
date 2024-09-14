@@ -21,7 +21,7 @@ def SignUpClient(client):
     while check != True:
         user_info = []
         name = input("Name (or 'x' to cancel): ")  # Thêm hướng dẫn nhập 'x' để thoát
-        if name == 'x':  # Kiểm tra nếu người dùng nhập 'x' để quay lại chat
+        if name == 'x':  #Kiểm tra nếu người dùng nhập 'x' để quay lại chat
             chat(client)
             return
         user_info.append(name)
