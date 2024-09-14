@@ -38,11 +38,7 @@ class LogIn(CTkFrame):
         set_appearance_mode("light")
         appController.geometry("900x500+300+200")
         # Tạo các phần tử giao diện và hình ảnh
-<<<<<<< HEAD: CLients/GUI/LoginPage.py
-        image_path = '/media/shen/New Volume/Project/PyThonLearn/ChatPyThon/ CLients/GUI/Images/login.png'
-=======
         image_path = '/home/khanh/Documents/Server/CLients/GUI/Images/login.png'
->>>>>>> UpdateServerUIv1:CLients/GUI/LoginPage.py
         image = Image.open(image_path)
         self.my_image = ImageTk.PhotoImage(image)
         image_label = Label(self, image=self.my_image, bg='white')

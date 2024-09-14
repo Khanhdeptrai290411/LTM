@@ -14,7 +14,7 @@ import main_UI
 
 import bcrypt
 HOST = "192.168.110.162"
-SERVER_PORT = 65433
+SERVER_PORT = 65432
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
