@@ -13,8 +13,8 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.1.8"
-SERVER_PORT = 65433
+HOST = "172.16.2.151"
+SERVER_PORT = 65432
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -22,6 +22,8 @@ SIGNUP='signup'
 FAIL='fail'
 END='x'
 LOGOUT='logout'
+OPENCHATBOX='openchatbox'
+CLICK_CHAT = 'click_chat'
 class App(CTk):
     
     def __init__(self):
@@ -29,6 +31,9 @@ class App(CTk):
         self.geometry("900x500+300+200+700")
         set_appearance_mode("light")  # Bạn có thể chuyển thành "dark" để thử nghiệm
         self.title("C")
+        self.User_info=[]
+        self.user_info=[]
+        self.Friend_list=['ad']
         
         #--------components----------------
         container = CTkFrame(self)  # Đảm bảo container có master
@@ -69,6 +74,24 @@ class App(CTk):
             client.recv(1024)
         msg = "end"
         client.send(msg.encode(FORMAT))
+    def Recv(self,client):
+        lst = []
+        item = client.recv(1024).decode(FORMAT)
+        while item != "end":  
+            lst.append(item)
+            client.sendall(item.encode(FORMAT))
+            item = client.recv(1024).decode(FORMAT)
+        return lst
+    
+    
+    def User_info_Recv(self,client):
+        lst = []
+        item = client.recv(1024).decode(FORMAT)
+        while item != "end":  
+            lst.append(item)
+            client.sendall(item.encode(FORMAT))
+            item = client.recv(1024).decode(FORMAT)
+        return lst
     
     def SignUp(self, curFrame):
         user_info = []
@@ -154,6 +177,19 @@ class App(CTk):
                 curFrame.label_notice.configure(text="Invalid Password")
                 return
             else:
+                lst = self.User_info_Recv(client)
+                self.User_info = lst
+                fields = self.User_info[0].split(',')
+                self.user_info = {
+                    'user_id': fields[0],
+                    'user_name': fields[1],
+                    'email': fields[2],
+                    'password_hash': fields[3],
+                    'ip_address': fields[4],
+                    'status': fields[5],
+                    'created_at': fields[6]
+                }
+                print(self.user_info['user_name'])
                 self.show_frame(main_UI.Main_Screen)
             
         except Exception as e:
@@ -167,7 +203,13 @@ class App(CTk):
         try:
             option = LOGOUT
             client.sendall(option.encode(FORMAT))
-            response = client.recv(1024).decode(FORMAT)  # Receive response from the server
+            client.recv(1024).decode(FORMAT)
+            # Gửi email của người dùng đến server
+            email = self.user_info['email']
+            client.sendall(email.encode(FORMAT))
+            
+            # Nhận phản hồi từ server
+            response = client.recv(1024).decode(FORMAT)
             print(response)
             if response == "True":
                 self.show_frame(LoginPage.LogIn)
@@ -176,10 +218,33 @@ class App(CTk):
         except Exception as e:
             print('Error: Server is not responding', str(e))
 
-            
+
+    def OpenChatBox(self):
+        try:
+            option = OPENCHATBOX
+            client.sendall(option.encode(FORMAT))
+            client.recv(1024)  # Chờ phản hồi từ server
+
+            email = self.user_info['email']
+            client.sendall(email.encode(FORMAT))
+
+            response = self.Recv(client)  # Nhận phản hồi từ server
+            print("Dữ liệu nhận được từ server:", response)
+            self.Friend_list = response
+            return response
+        except Exception as e:
+            print('Error: Server is not responding', str(e))       
+            return []
+       
     
-
-
+    def Click_on_group_chat(self):
+        try:
+            option=CLICK_CHAT
+            client.sendall(option.encode(FORMAT))
+        except Exception as e:
+            print('Error: Server is not responding', str(e)) 
+            
+        
 # Khởi tạo client socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, SERVER_PORT))
