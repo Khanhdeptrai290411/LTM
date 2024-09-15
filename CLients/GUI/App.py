@@ -13,7 +13,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "172.16.2.151"
+HOST = "192.168.1.2"
 SERVER_PORT = 65432
 FORMAT = "utf8"
 OK = 'ok'
@@ -33,7 +33,7 @@ class App(CTk):
         self.title("C")
         self.User_info=[]
         self.user_info=[]
-        self.Friend_list=['ad']
+        self.Friend_list=[]
         
         #--------components----------------
         container = CTkFrame(self)  # Đảm bảo container có master
@@ -66,7 +66,13 @@ class App(CTk):
         else:
             # Đặt lại kích thước khi quay lại các frame khác
             self.geometry("900x500+300+200")
-
+            
+            
+            
+ 
+    
+    
+    
     
     def sendList(self,client, list):
         for item in list:
@@ -231,11 +237,17 @@ class App(CTk):
             response = self.Recv(client)  # Nhận phản hồi từ server
             print("Dữ liệu nhận được từ server:", response)
             self.Friend_list = response
-            return response
+            self.update_main_screen()
         except Exception as e:
             print('Error: Server is not responding', str(e))       
             return []
-       
+        
+        
+    def update_main_screen(self):
+        # Cập nhật Main_Screen với Friend_list mới
+        if hasattr(self, 'frames') and main_UI.Main_Screen in self.frames:
+            main_screen = self.frames[main_UI.Main_Screen]
+            main_screen.update_friend_list(self.Friend_list)   
     
     def Click_on_group_chat(self):
         try:

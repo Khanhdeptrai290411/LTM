@@ -7,6 +7,7 @@ class GroupChat_frame(CTkFrame):
 
 
         self.appController=appController
+        self.Friend_list = appController.Friend_list
         # Cấu hình grid tổng thể
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=3)
@@ -106,12 +107,18 @@ class GroupChat_frame(CTkFrame):
         # Lấy tin nhắn từ khung nhập
         message = self.message_entry.get()
         if message.strip() != "":
-            print("Danh sách bạn bè trong Segment2:", ok)
+
             # Hiển thị tin nhắn của mình
             self.display_message(self.message_frame, message, True)
             # Xóa nội dung nhập
             self.message_entry.delete(0, 'end')
-
+    def update_friend_list(self, new_friend_list):
+        self.Friend_list = new_friend_list
+        print("ok", self.Friend_list)
+        self.render()
+    def render(self):    
+        for friend in self.Friend_list:
+            print(friend)
     def create_friends_list(self):
         friends_list = CTkFrame(self, fg_color='#f4f4f4')
         friends_list.grid(row=0, column=2, rowspan=2, sticky='nsew', padx=10, pady=10)
@@ -121,7 +128,7 @@ class GroupChat_frame(CTkFrame):
         friends_title.pack(pady=10)
 
         # Hiển thị danh sách bạn bè
-        friends = self.appController.Friend_list
+        friends = self.Friend_list
         for friend in friends:
             self.create_friend_item(friends_list, friend)
 
@@ -137,3 +144,4 @@ class GroupChat_frame(CTkFrame):
         chat_button = CTkButton(friend_frame, text="Chat", width=70, height=30, hover_color='#00aaff')
         chat_button.pack(side='right', padx=10, pady=10)
 
+    

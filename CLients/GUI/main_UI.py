@@ -16,6 +16,7 @@ class Main_Screen(CTkFrame):
         self.appcontroller = appcontroller
         self.Friend_list = appcontroller.Friend_list
         
+        
         # Cấu hình grid cho 2 cột
         self.grid_columnconfigure(0, weight=1)  # Cột 0 cho các nút bên trái
         self.grid_columnconfigure(1, weight=4)  # Cột 1 cho SegmentBottom
@@ -43,7 +44,19 @@ class Main_Screen(CTkFrame):
     def show_frame(self, page_class):
         frame = self.frames[page_class]
         frame.tkraise()
+        
+        
+        
+    def update_friend_list(self, new_friend_list):
+            self.Friend_list = new_friend_list
+            print("new Friends", self.Friend_list)
 
+    def update_group_screen(self):
+        # Cập nhật Main_Screen với Friend_list mới
+        if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+            group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+            group_screen.update_friend_list(self.Friend_list)         
+            
     class Segment2(CTkFrame):
         def __init__(self, parent, appController):
             super().__init__(master=parent, fg_color='#e1e6e9')
@@ -76,7 +89,7 @@ class Main_Screen(CTkFrame):
             contact_button = CTkButton(self, text="Request", image=contact_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
                               text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Contact_frame.Contact_frame))
             group_chat_button = CTkButton(self, text="Chat", image=groupchat_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
-                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(GroupChat_frame.GroupChat_frame),appController.OpenChatBox(),self.print_friend_list(appController.OpenChatBox())) )
+                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(GroupChat_frame.GroupChat_frame),self.main_screen.update_group_screen()) )
             meeting_button = CTkButton(self, text="Meeting", image=meeting_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
                               text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Meeting_frame.Meeting_frame))
             back_button = CTkButton(self, text="Back", image=back_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
@@ -90,7 +103,7 @@ class Main_Screen(CTkFrame):
             meeting_button.pack(pady=20, fill='x')
             back_button.pack(pady=20, fill='x')
             
-            Home_button.configure(text=self.Friend_list,width=200, height=100)
+            Home_button.configure(text=self.main_screen.Friend_list,width=200, height=100)
             document_button.configure(width=200, height=100)
             contact_button.configure(width=200, height=100)
             group_chat_button.configure(width=200, height=100)
