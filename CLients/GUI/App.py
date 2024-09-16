@@ -13,7 +13,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.1.2"
+HOST = "192.168.1.62"
 SERVER_PORT = 65432
 FORMAT = "utf8"
 OK = 'ok'
@@ -21,8 +21,9 @@ LOGIN='login'
 SIGNUP='signup'
 FAIL='fail'
 END='x'
-LOGOUT='logout'
+LOGOUT='logout' 
 OPENCHATBOX='openchatbox'
+SENDMESSAGE='sendmessage'
 CLICK_CHAT = 'click_chat'
 class App(CTk):
     
@@ -121,7 +122,7 @@ class App(CTk):
 
         # Gửi SIGNUP yêu cầu đến server
             option = SIGNUP
-            client.sendall(option.encode(FORMAT))
+            client.sendall(option.encode(FORMAT))   
 
         # Gửi thông tin người dùng sau khi server đã phản hồi
             if client.recv(1024).decode(FORMAT) == SIGNUP:
@@ -225,14 +226,15 @@ class App(CTk):
             print('Error: Server is not responding', str(e))
 
 
-    def OpenChatBox(self):
+    
+    def SendMessage(self,text):
         try:
-            option = OPENCHATBOX
+            option = SENDMESSAGE
             client.sendall(option.encode(FORMAT))
             client.recv(1024)  # Chờ phản hồi từ server
 
-            email = self.user_info['email']
-            client.sendall(email.encode(FORMAT))
+            Content =text
+            client.sendall(Content.encode(FORMAT))
 
             response = self.Recv(client)  # Nhận phản hồi từ server
             print("Dữ liệu nhận được từ server:", response)

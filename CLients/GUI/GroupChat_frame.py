@@ -5,9 +5,11 @@ class GroupChat_frame(CTkFrame):
     def __init__(self,parent,appController):
         super().__init__(parent)
 
-
+        
         self.appController=appController
         self.Friend_list = appController.Friend_list
+        self.Header_Name=[]
+        
         # Cấu hình grid tổng thể
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=3)
@@ -16,15 +18,19 @@ class GroupChat_frame(CTkFrame):
         self.grid_rowconfigure(1, weight=9)  # Hàng thứ hai cho phần chat lớn hơn
 
         # Tạo khu vực tên người dùng và icon call trên đầu
-        self.create_chat_header()
+        # self.create_chat_header()
 
         # Khu vực chat chính giữa có thanh cuộn cho nội dung tin nhắn
         self.create_chat_body()
 
         # Khu vực danh sách bạn bè bên phải
         self.create_friends_list()
-
-    def create_chat_header(self):
+    def Change_header_name(self):
+        self.Header=['vaiconcac']
+        self.create_chat_header(self.Header[0])
+        
+        
+    def create_chat_header(self,username):
         # Load icon call
         contact_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/contact.png')
         contact_icon = CTkImage(contact_icon, size=(30, 30))
@@ -34,13 +40,14 @@ class GroupChat_frame(CTkFrame):
         chat_header.grid(row=0, column=1, sticky='ew', padx=10, pady=(10, 0))
 
         # Thêm tên người đang chat
-        self.chat_name_label = CTkLabel(chat_header, text="John Doe", text_color='white', font=('Arial', 20, 'bold'))
+        self.chat_name_label = CTkLabel(chat_header, text=username, text_color='white', font=('Arial', 20, 'bold'))
         self.chat_name_label.pack(side='left', padx=20, pady=10)
 
         # Thêm nút gọi với icon
         self.call_button = CTkButton(chat_header, image=contact_icon, text="", width=50, fg_color='#0a84ff',
                                      hover_color='#0062cc', corner_radius=10)
         self.call_button.pack(side='right', padx=20, pady=10)
+        
 
     def create_chat_body(self):
         # Khung chính của khu vực chat
@@ -76,7 +83,7 @@ class GroupChat_frame(CTkFrame):
         self.input_frame = CTkFrame(chat_body, fg_color='#dfe3e6')
         self.input_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-        # Thêm khung nhập văn bản
+        # Thêm khung nhập Friend_listăn bản
         self.message_entry = CTkEntry(self.input_frame, placeholder_text="Type a message", width=500)
         self.message_entry.pack(side='left', padx=10, pady=10)
 
@@ -115,10 +122,8 @@ class GroupChat_frame(CTkFrame):
     def update_friend_list(self, new_friend_list):
         self.Friend_list = new_friend_list
         print("ok", self.Friend_list)
-        self.render()
-    def render(self):    
-        for friend in self.Friend_list:
-            print(friend)
+        self.create_friends_list()
+    
     def create_friends_list(self):
         friends_list = CTkFrame(self, fg_color='#f4f4f4')
         friends_list.grid(row=0, column=2, rowspan=2, sticky='nsew', padx=10, pady=10)
@@ -141,7 +146,7 @@ class GroupChat_frame(CTkFrame):
         friend_label.pack(side='left', padx=10, pady=10)
 
         # Nút chat với bạn
-        chat_button = CTkButton(friend_frame, text="Chat", width=70, height=30, hover_color='#00aaff')
+        chat_button = CTkButton(friend_frame, text="Chat", width=70, height=30, hover_color='#00aaff',command= lambda: self.Change_header_name())
         chat_button.pack(side='right', padx=10, pady=10)
 
     
