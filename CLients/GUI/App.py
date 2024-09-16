@@ -13,8 +13,8 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.1.62"
-SERVER_PORT = 65432
+HOST = "192.168.110.159"
+SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -23,7 +23,6 @@ FAIL='fail'
 END='x'
 LOGOUT='logout' 
 OPENCHATBOX='openchatbox'
-SENDMESSAGE='sendmessage'
 CLICK_CHAT = 'click_chat'
 class App(CTk):
     
@@ -100,6 +99,39 @@ class App(CTk):
             item = client.recv(1024).decode(FORMAT)
         return lst
     
+    def handle_client(conn, addr):
+        try:
+            print(f"Client connected: {addr}")
+            while True:
+                msg = conn.recv(1024).decode(FORMAT)
+                if msg == LOGIN:
+                    print(msg)
+                    conn.sendall(msg.encode(FORMAT))
+                    lst = Recv(conn)
+                    print(lst)
+                    checkLogin(conn, lst)
+                elif msg == SIGNUP:
+                    print(msg)
+                    conn.sendall(msg.encode(FORMAT))
+                    lst = Recv(conn)
+                    print(lst)
+                    checkSignUp(conn, lst, addr)  # Truyền addr vào
+                elif msg == LOGOUT:
+                    print(msg)
+                    conn.sendall(msg.encode(FORMAT))
+                    Remove_LiveAccount(conn)
+                elif msg == OPENCHATBOX:
+                    print(msg)
+                    conn.sendall(msg.encode(FORMAT))
+                    email = conn.recv(1024).decode(FORMAT)
+                    OpenChatBox(conn,addr,Live_Account,email)
+                elif msg == CLICK_CHAT:
+                    print(msg)       
+                    conn.sendall(msg.encode(FORMAT))
+                    
+        except Exception as e:
+            print(f"Error handling client {addr}: {e}")
+    
     def SignUp(self, curFrame):
         user_info = []
         try:
@@ -122,7 +154,7 @@ class App(CTk):
 
         # Gửi SIGNUP yêu cầu đến server
             option = SIGNUP
-            client.sendall(option.encode(FORMAT))   
+            client.sendall(option.encode(FORMAT))
 
         # Gửi thông tin người dùng sau khi server đã phản hồi
             if client.recv(1024).decode(FORMAT) == SIGNUP:
@@ -136,6 +168,19 @@ class App(CTk):
                 if response == FAIL:
                     curFrame.label_notice.configure(text="Email already exists. Please signup again")
                 else:
+                    lst = self.User_info_Recv(client)
+                    self.User_info = lst
+                    fields = self.User_info[0].split(',')
+                    self.user_info = {
+                        'user_id': fields[0],
+                        'user_name': fields[1],
+                        'email': fields[2],
+                        'password_hash': fields[3],
+                        'ip_address': fields[4],
+                        'status': fields[5],
+                        'created_at': fields[6]
+                    }
+                    
                     self.show_frame(main_UI.Main_Screen)
         except Exception as e:
             print('Error: Server is not responding', str(e))
@@ -161,6 +206,7 @@ class App(CTk):
             
             user_info.append(user_email)
             user_info.append(password)
+            
             # client.sendall(user_email.encode(FORMAT))
 
             # client.sendall(password.encode(FORMAT))
@@ -226,15 +272,14 @@ class App(CTk):
             print('Error: Server is not responding', str(e))
 
 
-    
-    def SendMessage(self,text):
+    def OpenChatBox(self):
         try:
-            option = SENDMESSAGE
+            option = OPENCHATBOX
             client.sendall(option.encode(FORMAT))
             client.recv(1024)  # Chờ phản hồi từ server
 
-            Content =text
-            client.sendall(Content.encode(FORMAT))
+            email = self.user_info['email']
+            client.sendall(email.encode(FORMAT))
 
             response = self.Recv(client)  # Nhận phản hồi từ server
             print("Dữ liệu nhận được từ server:", response)

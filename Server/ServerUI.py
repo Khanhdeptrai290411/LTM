@@ -2,8 +2,8 @@ import socket
 from customtkinter import *
 import threading
 
-HOST = "192.168.1.2"
-SERVER_PORT = 65433
+HOST = '192.168.110.159'
+SERVER_PORT = 65432
 GET_CLIENTS = 'getclients'
 FORMAT = "utf8"
 

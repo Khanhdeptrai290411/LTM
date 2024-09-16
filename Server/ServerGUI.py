@@ -8,8 +8,8 @@ import bcrypt
  
 
 
-HOST = '192.168.1.62'
-PORT = 65432
+HOST = '192.168.110.159'
+PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
@@ -40,6 +40,7 @@ print('Waiting for clients...')
 Live_Account=[]
 ID=[]
 Ad=[]
+Conn=[]
 User_info=[]
 def send_Clients(conn, clients_list):
     print("send client start")
@@ -79,14 +80,18 @@ def checkSignUp(conn, lst, addr):  # Thêm đối số addr
         email = lst[1]
         password_hash = lst[2]
         ip_address = addr[0]
-        
+        conn_add= str(conn)
         print(lst, addr, created_at, status)
         cursor.execute('INSERT INTO User(user_name, email, password_hash, ip_address) VALUES (%s, %s, %s, %s)', (user_name, email, password_hash, ip_address))
         db_conn.commit()
+        cursor.execute('SELECT * FROM User WHERE email = %s', (lst[0],))
+        user_list = cursor.fetchall()
         conn.sendall(OK.encode(FORMAT))
+        sendList(conn, user_list)
         Ad.append(ip_address)
         ID.append(email)
-        account=str(Ad[Ad.__len__()-1])+"-"+str(ID[ID.__len__()-1])
+        Conn.append(conn_add)
+        account=str(Ad[Ad.__len__()-1])+"-"+str(ID[ID.__len__()-1]+ "-" +str(Conn[Conn.__len__()-1]))
         Live_Account.append(account)
         print(Live_Account)
         
@@ -116,6 +121,7 @@ def checkLogin(conn, lst):
         user_list = cursor.fetchall()
         msg = OK
         ip_address = addr[0]
+        conn_add= str(conn)
         if result:
             data_password = result[0][0]
             if bcrypt.checkpw(paswd.encode(FORMAT), data_password.encode('utf-8')):
@@ -124,11 +130,13 @@ def checkLogin(conn, lst):
                 
                 Ad.append(ip_address)
                 ID.append(lst[0])
-                account = str(Ad[Ad.__len__()-1]) + "-" + str(ID[ID.__len__()-1])
+                Conn.append(conn_add)
+                account = str(Ad[Ad.__len__()-1]) + "-" + str(ID[ID.__len__()-1]+ "-" +str(Conn[Conn.__len__()-1]))
                 Live_Account.append(account)
                 
                 sendList(conn, user_list)
                 print(Live_Account)
+
             else:
                 msg = FAIL
                 conn.sendall(msg.encode(FORMAT))
@@ -148,16 +156,30 @@ def Remove_LiveAccount(conn):
         # Tìm và xóa email trong Live_Account
         for row in Live_Account:
             parse = row.find("-")
-            user_email = row[(parse + 1):]
+            email_and_conn = row[(parse + 1):]
+            ip_address = row[:parse]
+            
+            parse2 = email_and_conn.find('-')
+            conn_user = email_and_conn[(parse2 + 1):]
+            user_email = email_and_conn[:parse2]
+            print('this is ip',ip_address)
+            print('this is con',conn_user)
+            print('this is mail',user_email)
+            print('day la Conn lon',Conn)
+            print('day la mail lon',ID)
+            print('day la Ad lon',Ad)
+            print('day la live_account lon',Live_Account)
             if user_email == email:
-                ip_address = row[:parse]
+                        
                 Ad.remove(ip_address)
                 ID.remove(user_email)
+                Conn.remove(conn_user)
                 Live_Account.remove(row)
                 conn.sendall("True".encode(FORMAT))
                 return  # Exit after successful removal
-
-        # Nếu không tìm thấy email
+            # Nếu không tìm thấy email  
+        
+        
         conn.sendall("False".encode(FORMAT))
     except Exception as e:
         print(f"Error in Remove_LiveAccount: {e}")

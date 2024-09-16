@@ -21,6 +21,7 @@ class Main_Screen(CTkFrame):
         self.grid_columnconfigure(0, weight=1)  # Cột 0 cho các nút bên trái
         self.grid_columnconfigure(1, weight=4)  # Cột 1 cho SegmentBottom
 
+
         # Nav: Tạo phần nút bên trái
         self.SegmentNav = self.Segment2(self, appcontroller)
         self.SegmentNav.grid(row=0, column=0, sticky='ns', ipadx=30, ipady=20)  # Thay đổi sticky để kéo dài theo chiều dọc
@@ -28,6 +29,8 @@ class Main_Screen(CTkFrame):
         # Phần SegmentBottom bên phải
         SegmentBottom = CTkFrame(self, fg_color='blue',width=200)
         SegmentBottom.grid(row=0, column=1, sticky='nsew', ipadx=170)
+        SegmentBottom.grid_rowconfigure(0, weight=1)
+        SegmentBottom.grid_columnconfigure(0, weight=1)
 
         # Cấu self
         self.frames = {}
