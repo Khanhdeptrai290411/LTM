@@ -1,5 +1,4 @@
-import tkinter
-import customtkinter
+from customtkinter import *
 from PIL import Image, ImageTk
 
 from Home_frame import Home_frame
@@ -8,176 +7,119 @@ import GroupChat_frame
 import Meeting_frame
 import Contact_frame
 
-import LoginPage
+class Main_Screen(CTkFrame):
+    def __init__(self, parent, appcontroller):
+        super().__init__(parent, fg_color='#ffffff')
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        self.appcontroller = appcontroller
+        self.Friend_list = appcontroller.Friend_list
+        
+        
+        # Cấu hình grid cho 2 cột
+        self.grid_columnconfigure(0, weight=1)  # Cột 0 cho các nút bên trái
+        self.grid_columnconfigure(1, weight=4)  # Cột 1 cho SegmentBottom
 
 
-HOME_PATH=''
+        # Nav: Tạo phần nút bên trái
+        self.SegmentNav = self.Segment2(self, appcontroller)
+        self.SegmentNav.grid(row=0, column=0, sticky='ns', ipadx=30, ipady=20)  # Thay đổi sticky để kéo dài theo chiều dọc
 
+        # Phần SegmentBottom bên phải
+        SegmentBottom = CTkFrame(self, fg_color='blue',width=200)
+        SegmentBottom.grid(row=0, column=1, sticky='nsew', ipadx=170)
+        SegmentBottom.grid_rowconfigure(0, weight=1)
+        SegmentBottom.grid_columnconfigure(0, weight=1)
 
-
-## Luu y ta co app controller 
-
-class Main_Screen(customtkinter.CTkFrame):
-    def __init__(self,parent,appcontroller):
-        super().__init__(parent,fg_color='#ffffff')
-   
-        self.appcontroller=appcontroller
-        SegmentBottom=Home_frame(self,'vailone')
-        appcontroller.geometry("2000x900")
-        self.SegmentNav= self.Segment2(self,appcontroller)
-        self.SegmentNav.pack(side='top',fill='both',expand=True)
-    # Segment(window,'qeqew','qweqwe')
-        SegmentBottom.pack(side='bottom',expand=True,fill='both')  
-        self.frames={}
-        for F in (Home_frame,Document_frame.Document_frame,Home_frame,GroupChat_frame.GroupChat_frame,Contact_frame.Contact_frame):
-            frame=F(SegmentBottom,appcontroller)
+        # Cấu self
+        self.frames = {}
+        for F in (Home_frame, Document_frame.Document_frame, GroupChat_frame.GroupChat_frame, Meeting_frame.Meeting_frame, Contact_frame.Contact_frame):
+            frame = F(SegmentBottom, self.appcontroller)
             frame.grid(row=0, column=0, sticky='nsew')
+            self.frames[F] = frame
 
-            self.frames[F]=frame
-        self.changeFrame('Home')
-    
-    def backToLoginFrame(self):
-        self.appcontroller.show_frame(LoginPage.LogIn)
+        self.show_frame(Document_frame.Document_frame)
 
-    
-    def changeFrame(self,NameFrame):
-          if(NameFrame=='Document'):
-              frame=self.frames[Document_frame.Document_frame]
-              frame.tkraise()
-          elif(NameFrame=='Meeting'):
-              frame=self.frames[Meeting_frame.Meeting_frame]
-              frame.tkraise()
-          elif(NameFrame=='Group Chat'):
-              frame=self.frames[GroupChat_frame.GroupChat_frame]
-              frame.tkraise()
-          elif(NameFrame=='Contact'):
-              frame=self.frames[Contact_frame.Contact_frame]
-              frame.tkraise()
-          elif(NameFrame=='Home'):
-              frame=self.frames[Home_frame]
-              frame.tkraise()
+    def show_frame(self, page_class):
+        frame = self.frames[page_class]
+        frame.tkraise()
         
         
         
+    def update_friend_list(self, new_friend_list):
+            self.Friend_list = new_friend_list
+            print("new Friends", self.Friend_list)
 
-    # class Segment2(customtkinter.CTkFrame):
-    #     def __init__(self,parent,label_text,button_text):
-    #         super().__init__(master=parent)
+    def update_group_screen(self,appController):
+        appController.OpenChatBox()
+        # Cập nhật Main_Screen với Friend_list mới
+        if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+            group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+            group_screen.update_friend_list(self.Friend_list)         
             
+    class Segment2(CTkFrame):
+        def __init__(self, parent, appController):
+            super().__init__(master=parent, fg_color='#e1e6e9')
+
+            self.main_screen = parent
+            self.Friend_list = parent.Friend_list
             
+            # Tạo các nút lớn hơn
+            home_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/home.png')
+            home_icon = CTkImage(home_icon)
             
-    #         # self.rowconfigure(0,weight=1)
-    #         # self.columnconfigure((0,1,2),weight=1)
-    #         Home_button=self.creatButton('Home','icon')
-    #         document_button=self.creatButton('Document ','icon')
-    #         contact_button=self.creatButton('Contact','icon')
-    #         group_chat_button=self.creatButton('Group chat','icon')
-    #         meeting_button=self.creatButton('Meeting','icon')
-
-    #         Home_button.pack(side='left')
-    #         document_button.pack(side='left')
-    #         contact_button.pack(side='left')
-    #         group_chat_button.pack(side='left')
-    #         meeting_button.pack(side='left')
-
+            document_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/document.png')
+            document_icon = CTkImage(document_icon)
             
-    #         self.pack(expand=True,fill='both',side='bottom')
+            contact_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/contact.png')
+            contact_icon = CTkImage(contact_icon)
             
-    #     def creatButton(self,label_text,icon):
-    #         icon_image = Image.open('images/home.png')
-
-    #         icon_image=customtkinter.CTkImage(icon_image)
-    #         label=customtkinter.CTkButton(self,text=label_text,image=icon_image,compound='left',hover_color='red',padx=50)
-    #         return label
-    
-    
-    class Segment2(customtkinter.CTkFrame):
+            groupchat_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/groupchat.png')
+            groupchat_icon = CTkImage(groupchat_icon)
             
-
-        def __init__(self,parent,appController):
-            super().__init__(master=parent,height=50,fg_color='#e1e6e9')
-
-            self.main_screen=parent
+            meeting_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/meeting.png')
+            meeting_icon = CTkImage(meeting_icon)
             
-            self.currentButton=None
-            self.lastButton=None
-                
-                # self.rowconfigure(0,weight=1)
-                # self.columnconfigure((0,1,2),weight=1)
-            Home_button=self.creatButton('Home','icon')
-            # self.doimau(Home_button)
-            Home_button.configure(command=lambda: self.main_screen.changeFrame('Home'))
-            document_button=self.creatButton('Document ','icon')
-            contact_button=self.creatButton('Contact','icon')
-            group_chat_button=self.creatButton('Group chat','icon')
-            meeting_button=self.creatButton('Meeting','icon')
-            back_button=self.creatButton('back','icon')
-                
-                
-                
-                
-            document_button.configure(command=lambda: (self.doimau(contact_button),self.main_screen.changeFrame('Document')))
-            contact_button.configure(command=lambda: (self.doimau(contact_button),self.main_screen.changeFrame('Contact')))
-            group_chat_button.configure(command=lambda: (self.doimau(group_chat_button),self.main_screen.changeFrame('Group Chat')))
-            meeting_button.configure(command=lambda: (self.doimau(meeting_button),self.main_screen.changeFrame('Group Chat')))
-            back_button.configure(command=lambda: (self.doimau(back_button),appController.Logout()))
-   
-            Home_button.pack(side='left')
-            document_button.pack(side='left')
-            contact_button.pack(side='left')
-            group_chat_button.pack(side='left')
-            meeting_button.pack(side='left')
-            back_button.pack(side='left')
-                
-            self.pack(fill='both',side='top')
-                
-        def creatButton(self,label_text,icon):
-            icon_image = Image.open('D:\Documents\I_2024-25\LTM\cuoiki\LTM\CLients\GUI\Images\home.png')
-
-            icon_image=customtkinter.CTkImage(icon_image)
-        
-            label=customtkinter.CTkButton(self,text=label_text,image=icon_image,compound='left',hover_color='red',fg_color='#e1e6e9',text_color='#131619',font=('Arial',50))
-            label.configure(width=200, height=80)
-            return label
-
+            back_icon = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/back.png')
+            back_icon = CTkImage(back_icon)
             
-        def doimau(self,buttonChange):
-                self.lastButton=self.currentButton
-                self.currentButton=buttonChange
-                
-                self.currentButton.configure(fg_color='#ffffff')
-                if(self.lastButton):
-                    self.lastButton.configure(fg_color='#e1e6e9')
-                    self.lastButton=None
+            Home_button = CTkButton(self, image=home_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
+                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(Home_frame),appController.OpenChatBox()) )
+            document_button = CTkButton(self, text="Document", image=document_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
+                              text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Document_frame.Document_frame))
+            contact_button = CTkButton(self, text="Request", image=contact_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
+                              text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Contact_frame.Contact_frame))
+            group_chat_button = CTkButton(self, text="Chat", image=groupchat_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
+                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(GroupChat_frame.GroupChat_frame),self.main_screen.update_group_screen(appController)) )
+            meeting_button = CTkButton(self, text="Meeting", image=meeting_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
+                              text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Meeting_frame.Meeting_frame))
+            back_button = CTkButton(self, text="Back", image=back_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
+                              text_color='#131619', font=('Arial', 24), command=lambda: appController.Logout())
 
+            # Sắp xếp các nút
+            Home_button.pack(pady=20, fill='x')
+            document_button.pack(pady=20, fill='x')
+            contact_button.pack(pady=20, fill='x')
+            group_chat_button.pack(pady=20, fill='x')
+            meeting_button.pack(pady=20, fill='x')
+            back_button.pack(pady=20, fill='x')
             
+            Home_button.configure(text='Home',width=200, height=100)
+            document_button.configure(width=200, height=100)
+            contact_button.configure(width=200, height=100)
+            group_chat_button.configure(width=200, height=100)
+            meeting_button.configure(width=200, height=100)
+            back_button.configure(width=200, height=100)
 
+            self.pack(fill='both', side='left')
 
-    
-   
-    
-        
-        
-      
-
+        def print_friend_list(self,ok):
+            print("Danh sách bạn bè trong Segment2:", ok)
             
-    
-
-
-
-
-
-
-
-
-
-        
-# window.title('Meeting Chat')
-# window.geometry('2500x1500')
-
-
-
-# # Segment2(window,'qwewqeqew','qeqwqwe2121')
-
-
-# window.mainloop()
+        def update_group_screen(self,appController):
+            appController.OpenChatBox()
+            # Cập nhật Main_Screen với Friend_list mới
+            if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+                group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+                group_screen.update_friend_list(self.Friend_list)
