@@ -16,7 +16,7 @@ import main_UI
 
 import bcrypt
 HOST = "192.168.110.159"
-SERVER_PORT = 65435
+SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -189,12 +189,17 @@ class App(CTk):
             print('Error: Server is not responding', str(e))
     
              
-                
-    def LogIn(self, curFrame):
+    def LogIn(self):
+        
+        option = LOGIN
+        client.sendall(option.encode(FORMAT))
+              
+              
+    def LogInUser(self, curFrame):
         user_info = []   
 
         try:
-            self.connect_to_server()
+            
             user_email = curFrame.text_email.get()
             password = curFrame.text_password.get()
             if user_email == "Email" or password == "Password":
@@ -203,8 +208,7 @@ class App(CTk):
         
             print(f"Email: {user_email}, Password: {password}")  # In ra thông tin
         
-            option = LOGIN
-            client.sendall(option.encode(FORMAT))
+            
             uu=client.recv(1024).decode(FORMAT)#nhan phan hoi rang da nhan lenh login tu server
             print(uu)
             
@@ -255,11 +259,13 @@ class App(CTk):
     # def TestFrame(self):
     # show_frame(main_UI.Main_Screen)
 
-            
     def Logout(self):
+        option = LOGOUT
+        client.sendall(option.encode(FORMAT))
+        
+    def LogoutUser(self):
         try:
-            option = LOGOUT
-            client.sendall(option.encode(FORMAT))
+            
             client.recv(1024).decode(FORMAT)
             # Gửi email của người dùng đến server
             email = self.user_info['email']
@@ -277,13 +283,18 @@ class App(CTk):
         except Exception as e:
             print('Error: Server is not responding', str(e))
 
-    def updateRoom(self):
+    def handleClient(self):
         while self.connected:
             data = client.recv(1024).decode(FORMAT)
             if data:
+                if data == LOGOUT:
+                    self.LogoutUser()
                 if data == UPDATE_ROOM:
                     self.Friend_list = self.Recv(client)  # Cập nhật danh sách bạn bè
                     self.update_main_screen()  # Cập nhật giao diện
+                if data == LOGIN:
+                    
+                    self.LogInUser(self.frames[LoginPage.LogIn])
             time.sleep(0.1)  # Giảm tải chu kỳ của thread
 
 
@@ -326,7 +337,7 @@ class App(CTk):
             client.connect((HOST, SERVER_PORT))
             self.connected = True  # Đặt trạng thái kết nối là True khi kết nối thành công
             print("Client connected successfully!")
-            self.rT = threading.Thread(target=self.updateRoom)
+            self.rT = threading.Thread(target=self.handleClient)
             self.rT.start()
         except Exception as e:
             self.connected = False  # Đặt trạng thái kết nối là False nếu xảy ra lỗi
@@ -340,5 +351,5 @@ class App(CTk):
 
 # Tạo và chạy ứng dụng
 home = App()
-
+home.connect_to_server()
 home.mainloop()

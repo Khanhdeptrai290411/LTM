@@ -9,7 +9,7 @@ import bcrypt
 
 
 HOST = '192.168.110.159'
-PORT = 65435
+PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
@@ -174,7 +174,6 @@ def Remove_LiveAccount(conn):
                 Live_Account.remove(row)
                 print(f"User with email {email} has disconnected.")
                 conn.sendall("True".encode(FORMAT))
-                conn.close()
 
                 # Cập nhật danh sách bạn bè cho tất cả người dùng đang trực tuyến
                 for user_conn in Conn:
@@ -228,6 +227,11 @@ def OpenChatBox(conn, addr, Live_Account, user_email):
 def update_new_friendlist(conn, Live_Account, user_email):
     print('Update friend list')
     try:
+        # Kiểm tra xem conn có phải là đối tượng socket không
+        if not hasattr(conn, 'sendall'):
+            raise TypeError("Expected a socket object, got a different type")
+
+        # Gửi lệnh cập nhật danh sách bạn bè
         option = UPDATE_ROOM
         conn.sendall(option.encode(FORMAT))
         conn.recv(1024)  # Nhận xác nhận từ client
@@ -236,7 +240,7 @@ def update_new_friendlist(conn, Live_Account, user_email):
             parse = row.find("-")
             email_and_conn = row[(parse + 1):]
             ip_address = row[:parse]
-            
+
             parse2 = email_and_conn.find('-')
             conn_user = email_and_conn[(parse2 + 1):]
             email = email_and_conn[:parse2]
@@ -244,10 +248,13 @@ def update_new_friendlist(conn, Live_Account, user_email):
             if email != user_email:
                 conn.sendall(email.encode(FORMAT))
                 conn.recv(1024)  # Nhận xác nhận từ client
-        
+
         conn.sendall("end".encode(FORMAT))
+    except TypeError as te:
+        print(f"Type Error: {te}")
     except Exception as e:
         print(f"Error while updating friend list: {e}")
+
 
 
         
@@ -271,6 +278,8 @@ def handle_client(conn, addr):
             if msg == LOGIN:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
+                
+                conn.sendall(msg.encode(FORMAT))
                 lst = Recv(conn)
                 print(lst)
                 checkLogin(conn, lst)
@@ -287,6 +296,7 @@ def handle_client(conn, addr):
                 send_Clients(conn,Live_Account)
             elif msg == LOGOUT:
                 print(msg)
+                conn.sendall(msg.encode(FORMAT))
                 conn.sendall(msg.encode(FORMAT))
                 Remove_LiveAccount(conn)
             elif msg == OPENCHATBOX:

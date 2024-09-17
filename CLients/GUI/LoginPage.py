@@ -55,7 +55,7 @@ class LogIn(CTkFrame):
         self.text_password = PlaceholderEntry(frame, placeholder="Password", border_width=0, width=295, fg_color='white', font=("Microsoft YaHei UI Light", 11), show='*')
         self.frame_pass = CTkFrame(frame, width=295, height=2, fg_color='black')
         self.label_notice = CTkLabel(frame, text="", fg_color='white', font=("Microsoft YaHei UI Light", 11), text_color='red', width=256)
-        self.button_accept = CTkButton(frame, width=265, fg_color='#5F9EE6', text='Log In', text_color='white', font=("Arial", 12, 'bold'), hover=True, hover_color='#9bc4ee', command=lambda: (appController.LogIn(self)))
+        self.button_accept = CTkButton(frame, width=265, fg_color='#5F9EE6', text='Log In', text_color='white', font=("Arial", 12, 'bold'), hover=True, hover_color='#9bc4ee', command=lambda: (appController.LogIn()))
         self.move_to_signup_page = CTkButton(frame, width=6, text='Sign Up', border_width=0, fg_color='transparent', text_color='#5F9EE6', hover=False,command= lambda: appController.show_frame(SignupPage.SignUp))
         
         # Đặt các phần tử vào đúng vị trí
