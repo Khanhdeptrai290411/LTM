@@ -1,3 +1,5 @@
+import threading
+import time
 from customtkinter import *
 import tkinter
 from PIL import Image  # Import PIL để mở hình ảnh
@@ -14,7 +16,7 @@ import main_UI
 
 import bcrypt
 HOST = "192.168.110.159"
-SERVER_PORT = 65434
+SERVER_PORT = 65435
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -24,6 +26,7 @@ END='x'
 LOGOUT='logout' 
 OPENCHATBOX='openchatbox'
 CLICK_CHAT = 'click_chat'
+UPDATE_ROOM='update_room'
 class App(CTk):
     
     def __init__(self):
@@ -99,38 +102,38 @@ class App(CTk):
             item = client.recv(1024).decode(FORMAT)
         return lst
     
-    def handle_client(conn, addr):
-        try:
-            print(f"Client connected: {addr}")
-            while True:
-                msg = conn.recv(1024).decode(FORMAT)
-                if msg == LOGIN:
-                    print(msg)
-                    conn.sendall(msg.encode(FORMAT))
-                    lst = Recv(conn)
-                    print(lst)
-                    checkLogin(conn, lst)
-                elif msg == SIGNUP:
-                    print(msg)
-                    conn.sendall(msg.encode(FORMAT))
-                    lst = Recv(conn)
-                    print(lst)
-                    checkSignUp(conn, lst, addr)  # Truyền addr vào
-                elif msg == LOGOUT:
-                    print(msg)
-                    conn.sendall(msg.encode(FORMAT))
-                    Remove_LiveAccount(conn)
-                elif msg == OPENCHATBOX:
-                    print(msg)
-                    conn.sendall(msg.encode(FORMAT))
-                    email = conn.recv(1024).decode(FORMAT)
-                    OpenChatBox(conn,addr,Live_Account,email)
-                elif msg == CLICK_CHAT:
-                    print(msg)       
-                    conn.sendall(msg.encode(FORMAT))
+    # def handle_client(conn, addr):
+    #     try:
+    #         print(f"Client connected: {addr}")
+    #         while True:
+    #             msg = conn.recv(1024).decode(FORMAT)
+    #             if msg == LOGIN:
+    #                 print(msg)
+    #                 conn.sendall(msg.encode(FORMAT))
+    #                 lst = Recv(conn)
+    #                 print(lst)
+    #                 checkLogin(conn, lst)
+    #             elif msg == SIGNUP:
+    #                 print(msg)
+    #                 conn.sendall(msg.encode(FORMAT))
+    #                 lst = Recv(conn)
+    #                 print(lst)
+    #                 checkSignUp(conn, lst, addr)  # Truyền addr vào
+    #             elif msg == LOGOUT:
+    #                 print(msg)
+    #                 conn.sendall(msg.encode(FORMAT))
+    #                 Remove_LiveAccount(conn)
+    #             elif msg == OPENCHATBOX:
+    #                 print(msg)
+    #                 conn.sendall(msg.encode(FORMAT))
+    #                 email = conn.recv(1024).decode(FORMAT)
+    #                 OpenChatBox(conn,addr,Live_Account,email)
+    #             elif msg == CLICK_CHAT:
+    #                 print(msg)       
+    #                 conn.sendall(msg.encode(FORMAT))
                     
-        except Exception as e:
-            print(f"Error handling client {addr}: {e}")
+    #     except Exception as e:
+    #         print(f"Error handling client {addr}: {e}")
     
     def SignUp(self, curFrame):
         user_info = []
@@ -191,6 +194,7 @@ class App(CTk):
         user_info = []   
 
         try:
+            self.connect_to_server()
             user_email = curFrame.text_email.get()
             password = curFrame.text_password.get()
             if user_email == "Email" or password == "Password":
@@ -266,10 +270,21 @@ class App(CTk):
             print(response)
             if response == "True":
                 self.show_frame(LoginPage.LogIn)
+                client.close()
+                print('disconnected from server')
             else:
                 print("Logout failed.")
         except Exception as e:
             print('Error: Server is not responding', str(e))
+
+    def updateRoom(self):
+        while self.connected:
+            data = client.recv(1024).decode(FORMAT)
+            if data:
+                if data == UPDATE_ROOM:
+                    self.Friend_list = self.Recv(client)  # Cập nhật danh sách bạn bè
+                    self.update_main_screen()  # Cập nhật giao diện
+            time.sleep(0.1)  # Giảm tải chu kỳ của thread
 
 
     def OpenChatBox(self):
@@ -303,13 +318,27 @@ class App(CTk):
         except Exception as e:
             print('Error: Server is not responding', str(e)) 
             
-        
-# Khởi tạo client socket
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect((HOST, SERVER_PORT))
+    def connect_to_server(self):
+        global client  # Đảm bảo bạn sử dụng client toàn cục
+        try:
+            # Tạo một socket mới trước mỗi lần kết nối
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((HOST, SERVER_PORT))
+            self.connected = True  # Đặt trạng thái kết nối là True khi kết nối thành công
+            print("Client connected successfully!")
+            self.rT = threading.Thread(target=self.updateRoom)
+            self.rT.start()
+        except Exception as e:
+            self.connected = False  # Đặt trạng thái kết nối là False nếu xảy ra lỗi
+            print(f"Failed to connect: {str(e)}")
+
+
+            
+               
+
+
 
 # Tạo và chạy ứng dụng
 home = App()
 
 home.mainloop()
-

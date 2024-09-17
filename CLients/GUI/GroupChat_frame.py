@@ -26,7 +26,7 @@ class GroupChat_frame(CTkFrame):
         # Khu vực danh sách bạn bè bên phải
         self.create_friends_list()
     def Change_header_name(self):
-        self.Header=['vaiconcac']
+        self.Header=['hello']
         self.create_chat_header(self.Header[0])
         
         
