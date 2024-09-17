@@ -7,7 +7,7 @@ import LoginPage
 import EntryPage
 import HomePage
 import bcrypt
-HOST = "192.168.110.159"
+HOST = "192.168.110.24"
 SERVER_PORT = 65433
 FORMAT = "utf8"
 OK = 'ok'

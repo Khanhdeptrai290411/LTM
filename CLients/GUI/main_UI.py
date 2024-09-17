@@ -132,7 +132,7 @@ class Main_Screen(customtkinter.CTkFrame):
             self.pack(fill='both',side='top')
                 
         def creatButton(self,label_text,icon):
-            icon_image = Image.open('/home/khanh/Documents/Server/CLients/GUI/Images/home.png')
+            icon_image = Image.open('D:\Documents\I_2024-25\LTM\cuoiki\LTM\CLients\GUI\Images\home.png')
 
             icon_image=customtkinter.CTkImage(icon_image)
         
