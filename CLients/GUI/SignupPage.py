@@ -79,7 +79,7 @@ class SignUp(CTkFrame):
         # button_cancel = CTkButton(frame, fg_color='red', text='Cancel', text_color='white', 
         #                           font=("Arial", 12, 'bold'), hover=False, command=self.button_cancel_action)
         self.button_accept = CTkButton(frame,width=265, fg_color='#5F9EE6', text='Sign up', text_color='white', 
-                                  font=("Arial", 12, 'bold'), hover=True,hover_color='#9bc4ee', command= lambda: appController.SignUp(self))
+                                  font=("Arial", 12, 'bold'), hover=True,hover_color='#9bc4ee', command= lambda: appController.SignUp())
         self.move_to_login_page= CTkButton(frame,width=6,text='Log In',border_width=0,fg_color='transparent',text_color='#5F9EE6',hover=False,command= lambda: appController.show_frame(LoginPage.LogIn))
         
         

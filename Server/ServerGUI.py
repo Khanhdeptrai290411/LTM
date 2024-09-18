@@ -8,7 +8,7 @@ import bcrypt
  
 
 
-HOST = '192.168.110.159'
+HOST = '192.168.1.2'
 PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
@@ -285,6 +285,7 @@ def handle_client(conn, addr):
                 checkLogin(conn, lst)
             elif msg == SIGNUP:
                 print(msg)
+                conn.sendall(msg.encode(FORMAT))
                 conn.sendall(msg.encode(FORMAT))
                 lst = Recv(conn)
                 print(lst)

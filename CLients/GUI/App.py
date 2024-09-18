@@ -15,7 +15,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.110.159"
+HOST = "192.168.1.2"
 SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
@@ -135,7 +135,12 @@ class App(CTk):
     #     except Exception as e:
     #         print(f"Error handling client {addr}: {e}")
     
-    def SignUp(self, curFrame):
+    def SignUp(self):
+        option = SIGNUP
+        client.sendall(option.encode(FORMAT))
+        
+        
+    def SignUpUser(self, curFrame):
         user_info = []
         try:
         # Nhập thông tin người dùng
@@ -156,8 +161,7 @@ class App(CTk):
             print(f"Email: {user_email}, Password: {user_password}, userName: {user_name}")
 
         # Gửi SIGNUP yêu cầu đến server
-            option = SIGNUP
-            client.sendall(option.encode(FORMAT))
+
 
         # Gửi thông tin người dùng sau khi server đã phản hồi
             if client.recv(1024).decode(FORMAT) == SIGNUP:
@@ -295,6 +299,8 @@ class App(CTk):
                 if data == LOGIN:
                     
                     self.LogInUser(self.frames[LoginPage.LogIn])
+                if data == SIGNUP:
+                    self.SignUpUser(self.frames[SignupPage.SignUp])
             time.sleep(0.1)  # Giảm tải chu kỳ của thread
 
 
