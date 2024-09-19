@@ -15,7 +15,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.1.2"
+HOST = "192.168.110.159"
 SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
@@ -25,7 +25,7 @@ FAIL='fail'
 END='x'
 LOGOUT='logout' 
 OPENCHATBOX='openchatbox'
-CLICK_CHAT = 'click_chat'
+
 UPDATE_ROOM='update_room'
 class App(CTk):
     
@@ -136,6 +136,7 @@ class App(CTk):
     #         print(f"Error handling client {addr}: {e}")
     
     def SignUp(self):
+        self.connect_to_server()
         option = SIGNUP
         client.sendall(option.encode(FORMAT))
         
@@ -143,6 +144,8 @@ class App(CTk):
     def SignUpUser(self, curFrame):
         user_info = []
         try:
+            option = SIGNUP
+            client.sendall(option.encode(FORMAT))
         # Nhập thông tin người dùng
             user_name = curFrame.text_user_name.get()
             user_email = curFrame.text_email.get()
@@ -194,16 +197,17 @@ class App(CTk):
     
              
     def LogIn(self):
-        
+        self.connect_to_server()
         option = LOGIN
-        client.sendall(option.encode(FORMAT))
+        client.sendall(option.encode(FORMAT)) # gui lan 1
               
               
     def LogInUser(self, curFrame):
         user_info = []   
 
         try:
-            
+            option = LOGIN
+            client.sendall(option.encode(FORMAT)) # gui lan 2
             user_email = curFrame.text_email.get()
             password = curFrame.text_password.get()
             if user_email == "Email" or password == "Password":
@@ -269,7 +273,8 @@ class App(CTk):
         
     def LogoutUser(self):
         try:
-            
+            option = LOGOUT
+            client.sendall(option.encode(FORMAT))
             client.recv(1024).decode(FORMAT)
             # Gửi email của người dùng đến server
             email = self.user_info['email']
@@ -289,22 +294,33 @@ class App(CTk):
 
     def handleClient(self):
         while self.connected:
-            data = client.recv(1024).decode(FORMAT)
+            data = client.recv(1024).decode(FORMAT) # nhan lan 1 cua handle ben server
             if data:
                 if data == LOGOUT:
                     self.LogoutUser()
-                if data == UPDATE_ROOM:
-                    self.Friend_list = self.Recv(client)  # Cập nhật danh sách bạn bè
-                    self.update_main_screen()  # Cập nhật giao diện
-                if data == LOGIN:
-                    
+                elif data == UPDATE_ROOM:
+                    client.send(data.encode(FORMAT))
+                    client.recv(1024)
+                    client.send(data.encode(FORMAT))
+                    self.Update_Room()
+                
+                   
+                elif data == LOGIN:
                     self.LogInUser(self.frames[LoginPage.LogIn])
-                if data == SIGNUP:
+                elif data == SIGNUP:
                     self.SignUpUser(self.frames[SignupPage.SignUp])
+                elif data == OPENCHATBOX:
+                    self.OpenChatBoxUser()
+                 
+                
             time.sleep(0.1)  # Giảm tải chu kỳ của thread
 
-
+    
+    
     def OpenChatBox(self):
+        option = OPENCHATBOX
+        client.sendall(option.encode(FORMAT))
+    def OpenChatBoxUser(self):
         try:
             option = OPENCHATBOX
             client.sendall(option.encode(FORMAT))
@@ -313,27 +329,55 @@ class App(CTk):
             email = self.user_info['email']
             client.sendall(email.encode(FORMAT))
 
-            response = self.Recv(client)  # Nhận phản hồi từ server
+            response = self.Recv(client)  # Nhận phản hồi từ server 
             print("Dữ liệu nhận được từ server:", response)
-            self.Friend_list = response
+
+            # Lọc bỏ email của người dùng hiện tại
+            self.Friend_list = [friend for friend in response if friend != email]
+
+            # Cập nhật giao diện với danh sách bạn bè mới
             self.update_main_screen()
+            
         except Exception as e:
             print('Error: Server is not responding', str(e))       
             return []
-        
-        
+    # def Update_Room(self):
+    #     try:
+    #         response = self.Recv(client)  # Nhận phản hồi từ server 
+    #         print("Dữ liệu nhận được từ server:", response)
+
+    #         self.Friend_list = response
+    #         print(self.Friend_list)
+
+    #         self.update_main_screen()
+    #     except Exception as e:
+    #         print('Error: Server is not responding', str(e))       
+    #         return []
+    def Update_Room(self):
+        try:
+            self.Friend_list = []  # Khởi tạo lại danh sách bạn bè
+            while True:
+                # Nhận danh sách bạn bè cập nhật từ server
+                friend = client.recv(1024).decode(FORMAT)
+                if friend == "end":
+                    break  # Kết thúc danh sách
+                self.Friend_list.append(friend)  # Thêm bạn bè vào danh sách
+                client.sendall(friend.encode(FORMAT))  # Xác nhận đã nhận được bạn bè
+
+            print("Danh sách bạn bè cập nhật:", self.Friend_list)
+            self.update_main_screen()  # Cập nhật lại giao diện sau khi nhận đầy đủ danh sách bạn bè
+        except Exception as e:
+            print('Error: Server is not responding', str(e))
+            return []
+
+
     def update_main_screen(self):
         # Cập nhật Main_Screen với Friend_list mới
         if hasattr(self, 'frames') and main_UI.Main_Screen in self.frames:
             main_screen = self.frames[main_UI.Main_Screen]
             main_screen.update_friend_list(self.Friend_list)   
     
-    def Click_on_group_chat(self):
-        try:
-            option=CLICK_CHAT
-            client.sendall(option.encode(FORMAT))
-        except Exception as e:
-            print('Error: Server is not responding', str(e)) 
+
             
     def connect_to_server(self):
         global client  # Đảm bảo bạn sử dụng client toàn cục
