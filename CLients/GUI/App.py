@@ -15,7 +15,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.110.159"
+HOST = "192.168.1.102"
 SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
@@ -260,7 +260,8 @@ class App(CTk):
                 }
                 print(self.user_info['user_name'])
                 self.show_frame(main_UI.Main_Screen)
-            
+                self.auto_update()
+
         except Exception as e:
             print('Error: Server is not responding', str(e))
     
@@ -285,6 +286,7 @@ class App(CTk):
             print(response)
             if response == "True":
                 self.show_frame(LoginPage.LogIn)
+                
                 client.close()
                 print('disconnected from server')
             else:
@@ -355,22 +357,25 @@ class App(CTk):
     #         return []
     def Update_Room(self):
         try:
-            self.Friend_list = []  # Khởi tạo lại danh sách bạn bè
-            while True:
-                # Nhận danh sách bạn bè cập nhật từ server
-                friend = client.recv(1024).decode(FORMAT)
-                if friend == "end":
-                    break  # Kết thúc danh sách
-                self.Friend_list.append(friend)  # Thêm bạn bè vào danh sách
-                client.sendall(friend.encode(FORMAT))  # Xác nhận đã nhận được bạn bè
+            # Gọi hàm Recv để nhận danh sách bạn bè từ server
+            self.Friend_list = self.Recv(client)
 
-            print("Danh sách bạn bè cập nhật:", self.Friend_list)
-            self.update_main_screen()  # Cập nhật lại giao diện sau khi nhận đầy đủ danh sách bạn bè
+            # Kiểm tra xem danh sách bạn bè có hợp lệ không
+            if self.Friend_list:
+                print("Danh sách bạn bè cập nhật:", self.Friend_list)
+                self.update_main_screen()  # Cập nhật lại giao diện với danh sách mới
+            else:
+                print("Không có bạn bè nào trong danh sách.")
+
         except Exception as e:
             print('Error: Server is not responding', str(e))
             return []
 
 
+    def auto_update(self):
+        # Tự động cập nhật màn hình mỗi 5 giây
+        self.update_main_screen()
+        self.after(2000, self.auto_update)
     def update_main_screen(self):
         # Cập nhật Main_Screen với Friend_list mới
         if hasattr(self, 'frames') and main_UI.Main_Screen in self.frames:

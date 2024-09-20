@@ -8,7 +8,7 @@ import bcrypt
  
 
 
-HOST = '192.168.110.159'
+HOST = '192.168.1.102'
 PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
@@ -170,6 +170,7 @@ def Remove_LiveAccount(conn):
         for row in Live_Account:
             user_email = row['email']
             ip_address = row['ip_address']
+            conn_user = row['conn_str']
             conn_address = row['conn']
 
             if user_email == email:
@@ -179,6 +180,7 @@ def Remove_LiveAccount(conn):
                 Conn.remove(conn)
                 Live_Account.remove(row)
                 print(f"User with email {email} has disconnected.")
+                print(Live_Account)
                 conn.sendall("True".encode(FORMAT))
                 
                 return  # Exit after successful removal
@@ -221,19 +223,15 @@ def send_to_all():
 def update_new_friendlist(conn, Live_Account):
     print('Update friend list')
     try:
-        # Kiểm tra xem conn có phải là socket hợp lệ không
         if not isinstance(conn, socket.socket) or conn.fileno() == -1:
             raise TypeError("Expected a valid socket object, got an invalid or closed socket")
 
-        # Gửi lệnh cập nhật danh sách bạn bè
         option = UPDATE_ROOM
         conn.sendall(option.encode(FORMAT))
         conn.recv(1024)  # Nhận xác nhận từ client
 
-        # Gửi danh sách bạn bè cập nhật đến tất cả các client trong Live_Account
         for row in Live_Account:
             conn_user = row['conn']
-            # Chỉ gửi tới các client khác, không gửi lại cho chính client đã thực hiện thay đổi
             if conn_user != conn:
                 try:
                     for email in ID:
@@ -242,11 +240,13 @@ def update_new_friendlist(conn, Live_Account):
                 except Exception as e:
                     print(f"Error sending friend list to {conn_user}: {e}")
 
-        conn.sendall("end".encode(FORMAT))  # Gửi tín hiệu kết thúc danh sách
+        conn.sendall("end".encode(FORMAT))
+        conn.recv(1024)  # Đợi xác nhận từ client để tránh lỗi treo
     except TypeError as te:
         print(f"Type Error: {te}")
     except Exception as e:
         print(f"Error while updating friend list: {e}")
+
 
         
 
@@ -292,7 +292,8 @@ def handle_client(conn, addr):
                 lst = Recv(conn)
                 print(lst)
                 checkSignUp(conn, lst, addr)  # Truyền addr vào
-      
+                print("Toi ham send to all")
+                send_to_all()
             elif msg == GET_CLIENTS:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
@@ -304,7 +305,8 @@ def handle_client(conn, addr):
                 conn.recv(1024)
                 conn.sendall(msg.encode(FORMAT))
                 Remove_LiveAccount(conn)
-          
+                print("Toi ham send to all")
+                send_to_all()
             elif msg == OPENCHATBOX:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
