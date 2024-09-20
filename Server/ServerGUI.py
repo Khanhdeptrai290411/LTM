@@ -8,7 +8,7 @@ import bcrypt
  
 
 
-HOST = '192.168.1.2'
+HOST = '192.168.110.159'
 PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
@@ -22,7 +22,7 @@ LOGOUT='logout'
 OPENCHATBOX='openchatbox'
 
 UPDATE_ROOM='update_room'
-CLICK_CHAT = 'click_chat'
+
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
     host='localhost',
@@ -92,8 +92,13 @@ def checkSignUp(conn, lst, addr):  # Thêm đối số addr
         sendList(conn, user_list)
         Ad.append(ip_address)
         ID.append(email)
-        Conn.append(conn_add)
-        account=str(Ad[Ad.__len__()-1])+"-"+str(ID[ID.__len__()-1]+ "-" +str(Conn[Conn.__len__()-1]))
+        Conn.append(conn)
+        account = {
+        "ip_address": ip_address,
+        "email": email,
+        "conn_str": str(conn),  # Chuỗi biểu diễn để hiển thị
+        "conn": conn  # Đối tượng socket để thao tác
+        }
         Live_Account.append(account)
         print(Live_Account)
         
@@ -132,13 +137,18 @@ def checkLogin(conn, lst):
                 
                 Ad.append(ip_address)
                 ID.append(lst[0])
-                Conn.append(conn_add)
-                account = str(Ad[Ad.__len__()-1]) + "-" + str(ID[ID.__len__()-1]+ "-" +str(Conn[Conn.__len__()-1]))
+                Conn.append(conn)
+                account = {
+                "ip_address": ip_address,
+                "email": lst[0],
+                "conn_str": str(conn),  # Chuỗi biểu diễn để hiển thị
+                "conn": conn  # Đối tượng socket để thao tác
+                }
                 Live_Account.append(account)
                 
                 sendList(conn, user_list)
                 print(Live_Account)
-
+                
             else:
                 msg = FAIL
                 conn.sendall(msg.encode(FORMAT))
@@ -158,26 +168,18 @@ def Remove_LiveAccount(conn):
         check_timra = False
         # Tìm và xóa email trong Live_Account
         for row in Live_Account:
-            parse = row.find("-")
-            email_and_conn = row[(parse + 1):]
-            ip_address = row[:parse]
-            
-            parse2 = email_and_conn.find('-')
-            conn_user = email_and_conn[(parse2 + 1):]
-            user_email = email_and_conn[:parse2]
+            user_email = row['email']
+            ip_address = row['ip_address']
+            conn_address = row['conn']
 
             if user_email == email:
                 # Xóa thông tin của người dùng
                 Ad.remove(ip_address)
                 ID.remove(user_email)
-                Conn.remove(conn_user)
+                Conn.remove(conn)
                 Live_Account.remove(row)
                 print(f"User with email {email} has disconnected.")
                 conn.sendall("True".encode(FORMAT))
-
-                # Cập nhật danh sách bạn bè cho tất cả người dùng đang trực tuyến
-                for user_conn in Conn:
-                    update_new_friendlist(user_conn, Live_Account, email)
                 
                 return  # Exit after successful removal
 
@@ -193,67 +195,64 @@ def OpenChatBox(conn, addr, Live_Account, user_email):
     print('Open chat box')
     try:
         # Duyệt qua từng tài khoản trong Live_Account
-        for row in Live_Account:
-            parse = row.find("-")
-            email_and_conn = row[(parse + 1):]
-            ip_address = row[:parse]
-            
-            parse2 = email_and_conn.find('-')
-            conn_user = email_and_conn[(parse2 + 1):]
-            email = email_and_conn[:parse2]
+        for email in ID:
 
             if email != user_email :
-                        
+                print(email)       
                 conn.sendall(email.encode(FORMAT))
                     # Đợi client xác nhận đã nhận email
                 conn.recv(1024)
-        # for account in Live_Account:
-        #     # Phân tách thông tin tài khoản theo định dạng "ip_address-email"
-        #     parse = account.find("-")
-        #     if parse != -1:
-        #         email = account[parse + 1:]
-                
-        #         # Bỏ qua email của người dùng hiện tại
-        #         if email != user_email:
-        #             conn.sendall(email.encode(FORMAT))
-        #             # Đợi client xác nhận đã nhận email
-        #             conn.recv(1024)
+   
         
         # Gửi thông báo kết thúc
         conn.sendall("end".encode(FORMAT))
+        conn.recv(1024)
     except Exception as e:
         print(f"Error: {e}")
         
-def update_new_friendlist(conn, Live_Account, user_email):
+
+
+def send_to_all():
+    option = UPDATE_ROOM
+    conn.sendall(option.encode(FORMAT))
+    
+
+
+def update_new_friendlist(conn, Live_Account):
     print('Update friend list')
     try:
-        # Kiểm tra xem conn có phải là đối tượng socket không
-        if not hasattr(conn, 'sendall'):
-            raise TypeError("Expected a socket object, got a different type")
+        # Kiểm tra xem conn có phải là socket hợp lệ không
+        if not isinstance(conn, socket.socket) or conn.fileno() == -1:
+            raise TypeError("Expected a valid socket object, got an invalid or closed socket")
 
         # Gửi lệnh cập nhật danh sách bạn bè
         option = UPDATE_ROOM
         conn.sendall(option.encode(FORMAT))
         conn.recv(1024)  # Nhận xác nhận từ client
 
+        # Gửi danh sách bạn bè cập nhật đến tất cả các client trong Live_Account
         for row in Live_Account:
-            parse = row.find("-")
-            email_and_conn = row[(parse + 1):]
-            ip_address = row[:parse]
+            conn_user = row['conn']
+            # Chỉ gửi tới các client khác, không gửi lại cho chính client đã thực hiện thay đổi
+            if conn_user != conn:
+                try:
+                    for email in ID:
+                        conn_user.sendall(email.encode(FORMAT))
+                        conn_user.recv(1024)  # Nhận xác nhận từ client
+                except Exception as e:
+                    print(f"Error sending friend list to {conn_user}: {e}")
 
-            parse2 = email_and_conn.find('-')
-            conn_user = email_and_conn[(parse2 + 1):]
-            email = email_and_conn[:parse2]
-
-            if email != user_email:
-                conn.sendall(email.encode(FORMAT))
-                conn.recv(1024)  # Nhận xác nhận từ client
-
-        conn.sendall("end".encode(FORMAT))
+        conn.sendall("end".encode(FORMAT))  # Gửi tín hiệu kết thúc danh sách
     except TypeError as te:
         print(f"Type Error: {te}")
     except Exception as e:
         print(f"Error while updating friend list: {e}")
+
+        
+
+
+
+
 
 
 
@@ -277,19 +276,23 @@ def handle_client(conn, addr):
             msg = conn.recv(1024).decode(FORMAT)
             if msg == LOGIN:
                 print(msg)
-                conn.sendall(msg.encode(FORMAT))
-                
-                conn.sendall(msg.encode(FORMAT))
+                conn.sendall(msg.encode(FORMAT)) #gui lan 1 cho handle lenh LOGIN
+                conn.recv(1024) #nhan tiep lenh LOGIN tu ham
+                conn.sendall(msg.encode(FORMAT)) # tra lai phan hoi cho ham
                 lst = Recv(conn)
                 print(lst)
                 checkLogin(conn, lst)
+                print("Toi ham send to all")
+                send_to_all()
             elif msg == SIGNUP:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
+                conn.recv(1024)
                 conn.sendall(msg.encode(FORMAT))
                 lst = Recv(conn)
                 print(lst)
                 checkSignUp(conn, lst, addr)  # Truyền addr vào
+      
             elif msg == GET_CLIENTS:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
@@ -298,19 +301,19 @@ def handle_client(conn, addr):
             elif msg == LOGOUT:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
+                conn.recv(1024)
                 conn.sendall(msg.encode(FORMAT))
                 Remove_LiveAccount(conn)
+          
             elif msg == OPENCHATBOX:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT))
+                conn.recv(1024)
+                conn.sendall(msg.encode(FORMAT))
                 email = conn.recv(1024).decode(FORMAT)
                 OpenChatBox(conn,addr,Live_Account,email)
-            elif msg == CLICK_CHAT:
-                print(msg)       
-                conn.sendall(msg.encode(FORMAT))
-            # elif msg == UPDATE_USER_LIST:
-            #     print(msg)
-            #     conn.sendall(msg.encode(FORMAT))
+            elif msg == UPDATE_ROOM:
+                update_new_friendlist(conn,Live_Account)
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
