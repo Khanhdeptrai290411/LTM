@@ -23,7 +23,7 @@ def main():
 
     #image
     # bg=tkinter.PhotoImage(file="images/entrybackground.png")
-    bg=customtkinter.CTkImage(light_image=Image.open("images/entrybackground.png"),size=(75,45))
+    bg=customtkinter.CTkImage(light_image=Image.open("/home/khanh/Documents/Server/CLients/GUI/Images/LoginScreen.jpg"),size=(75,45))
 
 
     #frame
