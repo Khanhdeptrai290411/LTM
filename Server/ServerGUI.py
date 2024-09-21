@@ -6,7 +6,7 @@ import mysql.connector
 from datetime import datetime
 import bcrypt
  
-
+live_account_lock = threading.Lock()
 
 HOST = '192.168.1.102'
 PORT = 65434
@@ -61,7 +61,17 @@ def Recv(conn):
         item = conn.recv(1024).decode(FORMAT)
     return lst
 
+def sendListConn(conn, list):
+    for item in list:
+        print(f"Gửi {item} tới client {conn}")  # Log mỗi khi gửi item
+        conn.sendall(item.encode(FORMAT))
+        response = conn.recv(1024)  # Nhận phản hồi từ client
+        print(f"Phản hồi từ client sau khi nhận {item}: {response.decode(FORMAT)}")
+    msg = "end"
+    print(f"Gửi thông báo kết thúc tới client {conn}")
+    conn.send(msg.encode(FORMAT))
 
+        
 def sendList(conn, data_list):
     for item in data_list:
         # Convert each item to a string if it's not already
@@ -215,37 +225,44 @@ def OpenChatBox(conn, addr, Live_Account, user_email):
 
 
 def send_to_all():
-    option = UPDATE_ROOM
-    conn.sendall(option.encode(FORMAT))
+    for conn in Conn:
+        if conn:  # Kiểm tra xem kết nối có còn tồn tại không
+            try:
+                option = UPDATE_ROOM
+                conn.sendall(option.encode(FORMAT))
+                print(f"Đã gửi lệnh {option} tới {conn}")
+                time.sleep(0.5)
+            except Exception as e:
+                print(f"Lỗi khi gửi lệnh tới {conn}: {e}")
+
     
 
 
-def update_new_friendlist(conn, Live_Account):
-    print('Update friend list')
-    try:
-        if not isinstance(conn, socket.socket) or conn.fileno() == -1:
-            raise TypeError("Expected a valid socket object, got an invalid or closed socket")
+def update_new_friendlist( Live_Account):
+    with live_account_lock:
+        print('Update friend list bắt đầu')
+        try:
+            for row in Live_Account:
+                conn_user = row['conn']
 
-        option = UPDATE_ROOM
-        conn.sendall(option.encode(FORMAT))
-        conn.recv(1024)  # Nhận xác nhận từ client
+                option = UPDATE_ROOM
 
-        for row in Live_Account:
-            conn_user = row['conn']
-            if conn_user != conn:
-                try:
-                    for email in ID:
-                        conn_user.sendall(email.encode(FORMAT))
-                        conn_user.recv(1024)  # Nhận xác nhận từ client
-                except Exception as e:
-                    print(f"Error sending friend list to {conn_user}: {e}")
 
-        conn.sendall("end".encode(FORMAT))
-        conn.recv(1024)  # Đợi xác nhận từ client để tránh lỗi treo
-    except TypeError as te:
-        print(f"Type Error: {te}")
-    except Exception as e:
-        print(f"Error while updating friend list: {e}")
+                conn_user.sendall(option.encode(FORMAT))
+
+                conn_user.recv(1024)  # Nhận xác nhận từ client
+                # Tạo danh sách bạn bè trừ chính client hiện tại
+                friend_list = [user['email'] for user in Live_Account ]
+                # if user['conn'] != conn_user
+                print(f"Gửi danh sách bạn bè {friend_list} tới client {conn_user}")
+                    
+                # Gọi hàm sendListConn để gửi danh sách bạn bè
+                sendListConn(conn_user, friend_list)
+                    
+        except Exception as e:
+            print(f"Error: {e}")
+
+
 
 
         
@@ -315,7 +332,8 @@ def handle_client(conn, addr):
                 email = conn.recv(1024).decode(FORMAT)
                 OpenChatBox(conn,addr,Live_Account,email)
             elif msg == UPDATE_ROOM:
-                update_new_friendlist(conn,Live_Account)
+                print(f'nhanh lenh {UPDATE_ROOM} tu {conn}')
+                update_new_friendlist(Live_Account)
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
