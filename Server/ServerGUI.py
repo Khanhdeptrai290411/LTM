@@ -238,26 +238,27 @@ def send_to_all():
     
 
 
-def update_new_friendlist( Live_Account):
+def update_new_friendlist(conn, Live_Account):
     with live_account_lock:
         print('Update friend list bắt đầu')
         try:
+            option = UPDATE_ROOM
+
+
+            conn.sendall(option.encode(FORMAT))
+
+            conn.recv(1024)  # Nhận xác nhận từ client
             for row in Live_Account:
                 conn_user = row['conn']
 
-                option = UPDATE_ROOM
-
-
-                conn_user.sendall(option.encode(FORMAT))
-
-                conn_user.recv(1024)  # Nhận xác nhận từ client
+                
                 # Tạo danh sách bạn bè trừ chính client hiện tại
                 friend_list = [user['email'] for user in Live_Account ]
                 # if user['conn'] != conn_user
                 print(f"Gửi danh sách bạn bè {friend_list} tới client {conn_user}")
                     
                 # Gọi hàm sendListConn để gửi danh sách bạn bè
-                sendListConn(conn_user, friend_list)
+            sendListConn(conn, friend_list)
                     
         except Exception as e:
             print(f"Error: {e}")
@@ -291,6 +292,7 @@ def handle_client(conn, addr):
         print(f"Client connected: {addr}")
         while True:
             msg = conn.recv(1024).decode(FORMAT)
+            print(f'hien tai dang o handle_client {conn}')
             if msg == LOGIN:
                 print(msg)
                 conn.sendall(msg.encode(FORMAT)) #gui lan 1 cho handle lenh LOGIN
@@ -333,7 +335,7 @@ def handle_client(conn, addr):
                 OpenChatBox(conn,addr,Live_Account,email)
             elif msg == UPDATE_ROOM:
                 print(f'nhanh lenh {UPDATE_ROOM} tu {conn}')
-                update_new_friendlist(Live_Account)
+                update_new_friendlist(conn,Live_Account)
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
