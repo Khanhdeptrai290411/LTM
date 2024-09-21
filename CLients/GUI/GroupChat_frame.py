@@ -121,8 +121,10 @@ class GroupChat_frame(CTkFrame):
             self.message_entry.delete(0, 'end')
     def update_friend_list(self, new_friend_list):
         self.Friend_list = new_friend_list
-        print("ok", self.Friend_list)
-        self.create_friends_list()
+        print("Danh sách bạn bè trong GroupChat cập nhật:", self.Friend_list)
+        self.create_friends_list()  # Hàm này sẽ làm mới danh sách bạn bè
+
+
     
     def create_friends_list(self):
         friends_list = CTkFrame(self, fg_color='#f4f4f4')

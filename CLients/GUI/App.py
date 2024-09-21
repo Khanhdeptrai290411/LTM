@@ -16,7 +16,7 @@ import main_UI
 
 import bcrypt
 HOST = "192.168.1.102"
-SERVER_PORT = 65434
+SERVER_PORT = 65435
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -33,11 +33,12 @@ class App(CTk):
         super().__init__()
         self.geometry("900x500+300+200+700")
         set_appearance_mode("light")  # Bạn có thể chuyển thành "dark" để thử nghiệm
-        self.title("C")
+        
         self.User_info=[]
         self.user_info=[]
         self.Friend_list=[]
-        
+        self.title('C')
+
         #--------components----------------
         container = CTkFrame(self)  # Đảm bảo container có master
         container.pack(fill="both", expand=True)
@@ -86,10 +87,12 @@ class App(CTk):
     def Recv(self,client):
         lst = []
         item = client.recv(1024).decode(FORMAT)
+        print(f"Nhận dữ liệu từ server: {item}")
         while item != "end":  
             lst.append(item)
             client.sendall(item.encode(FORMAT))
             item = client.recv(1024).decode(FORMAT)
+            print(f"Nhận thêm dữ liệu từ server: {item}")
         return lst
     
     
@@ -102,38 +105,7 @@ class App(CTk):
             item = client.recv(1024).decode(FORMAT)
         return lst
     
-    # def handle_client(conn, addr):
-    #     try:
-    #         print(f"Client connected: {addr}")
-    #         while True:
-    #             msg = conn.recv(1024).decode(FORMAT)
-    #             if msg == LOGIN:
-    #                 print(msg)
-    #                 conn.sendall(msg.encode(FORMAT))
-    #                 lst = Recv(conn)
-    #                 print(lst)
-    #                 checkLogin(conn, lst)
-    #             elif msg == SIGNUP:
-    #                 print(msg)
-    #                 conn.sendall(msg.encode(FORMAT))
-    #                 lst = Recv(conn)
-    #                 print(lst)
-    #                 checkSignUp(conn, lst, addr)  # Truyền addr vào
-    #             elif msg == LOGOUT:
-    #                 print(msg)
-    #                 conn.sendall(msg.encode(FORMAT))
-    #                 Remove_LiveAccount(conn)
-    #             elif msg == OPENCHATBOX:
-    #                 print(msg)
-    #                 conn.sendall(msg.encode(FORMAT))
-    #                 email = conn.recv(1024).decode(FORMAT)
-    #                 OpenChatBox(conn,addr,Live_Account,email)
-    #             elif msg == CLICK_CHAT:
-    #                 print(msg)       
-    #                 conn.sendall(msg.encode(FORMAT))
-                    
-    #     except Exception as e:
-    #         print(f"Error handling client {addr}: {e}")
+    
     
     def SignUp(self):
         self.connect_to_server()
@@ -260,7 +232,8 @@ class App(CTk):
                 }
                 print(self.user_info['user_name'])
                 self.show_frame(main_UI.Main_Screen)
-                self.auto_update()
+                self.title(self.user_info.get('email') if self.user_info else 'C')
+                print("da chay xong loginuser")
 
         except Exception as e:
             print('Error: Server is not responding', str(e))
@@ -301,10 +274,16 @@ class App(CTk):
                 if data == LOGOUT:
                     self.LogoutUser()
                 elif data == UPDATE_ROOM:
-                    client.send(data.encode(FORMAT))
+                    print(f"Client {client} đã nhận lệnh UPDATE_ROOM, gửi xác nhận lại")
+                    client.send(data.encode(FORMAT)) #gui toi handle ben kia
+                    print(f"Client {client} đã gửi xác nhận lệnh UPDATE_ROOM")
                     client.recv(1024)
+                    print(f"Client {client} đã nhận phản hồi từ server")
                     client.send(data.encode(FORMAT))
-                    self.Update_Room()
+                    print(f"Client {client} đã gửi lại lệnh xác nhận UPDATE_ROOM")
+                    lst = self.Recv(client)
+                    print(f"Client {client} đã nhận danh sách bạn bè: {lst}")
+                    self.Update_Room(lst)
                 
                    
                 elif data == LOGIN:
@@ -315,7 +294,7 @@ class App(CTk):
                     self.OpenChatBoxUser()
                  
                 
-            time.sleep(0.1)  # Giảm tải chu kỳ của thread
+ # Giảm tải chu kỳ của thread
 
     
     
@@ -355,10 +334,10 @@ class App(CTk):
     #     except Exception as e:
     #         print('Error: Server is not responding', str(e))       
     #         return []
-    def Update_Room(self):
+    def Update_Room(self,lst):
         try:
             # Gọi hàm Recv để nhận danh sách bạn bè từ server
-            self.Friend_list = self.Recv(client)
+            self.Friend_list = lst
 
             # Kiểm tra xem danh sách bạn bè có hợp lệ không
             if self.Friend_list:
@@ -372,10 +351,7 @@ class App(CTk):
             return []
 
 
-    def auto_update(self):
-        # Tự động cập nhật màn hình mỗi 5 giây
-        self.update_main_screen()
-        self.after(2000, self.auto_update)
+
     def update_main_screen(self):
         # Cập nhật Main_Screen với Friend_list mới
         if hasattr(self, 'frames') and main_UI.Main_Screen in self.frames:
@@ -392,8 +368,8 @@ class App(CTk):
             client.connect((HOST, SERVER_PORT))
             self.connected = True  # Đặt trạng thái kết nối là True khi kết nối thành công
             print("Client connected successfully!")
-            self.rT = threading.Thread(target=self.handleClient)
-            self.rT.start()
+            rT = threading.Thread(target=self.handleClient)
+            rT.start()
         except Exception as e:
             self.connected = False  # Đặt trạng thái kết nối là False nếu xảy ra lỗi
             print(f"Failed to connect: {str(e)}")
@@ -406,5 +382,5 @@ class App(CTk):
 
 # Tạo và chạy ứng dụng
 home = App()
-home.connect_to_server()
+# home.connect_to_server()
 home.mainloop()

@@ -46,20 +46,25 @@ class Main_Screen(CTkFrame):
         frame.tkraise()
         
         
-    def auto_update(self):
-        # Tự động cập nhật màn hình mỗi 5 giây
-        self.update_group_screen(self.appcontroller)
-        self.after(2000, self.auto_update)    
+        
     def update_friend_list(self, new_friend_list):
-            self.Friend_list = new_friend_list
-            print("new Friends", self.Friend_list)
+    # Cập nhật danh sách bạn bè
+        self.Friend_list = new_friend_list
+        print("Danh sách bạn bè mới:", self.Friend_list)
 
-    def update_group_screen(self,appController):
-
-        # Cập nhật Main_Screen với Friend_list mới
+        # Cập nhật lại các giao diện liên quan
         if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+            print('da bam')
             group_screen = self.frames[GroupChat_frame.GroupChat_frame]
-            group_screen.update_friend_list(self.Friend_list)         
+            group_screen.update_friend_list(self.Friend_list)  # Cập nhật giao diện GroupChat
+
+
+    # def update_group_screen(self,appController):
+    #     appController.OpenChatBox()
+    #     # Cập nhật Main_Screen với Friend_list mới
+    #     if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+    #         group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+    #         group_screen.update_friend_list(self.Friend_list)         
             
     class Segment2(CTkFrame):
         def __init__(self, parent, appController):
@@ -88,13 +93,13 @@ class Main_Screen(CTkFrame):
             back_icon = CTkImage(back_icon)
             
             Home_button = CTkButton(self, image=home_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
-                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(Home_frame),appController.OpenChatBox()) )
+                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(Home_frame)) )
             document_button = CTkButton(self, text="Document", image=document_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
                               text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Document_frame.Document_frame))
             contact_button = CTkButton(self, text="Request", image=contact_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
                               text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Contact_frame.Contact_frame))
             group_chat_button = CTkButton(self, text="Chat", image=groupchat_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
-                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(GroupChat_frame.GroupChat_frame),self.main_screen.auto_update()) )
+                              text_color='#131619', font=('Arial', 24), command=lambda:(parent.show_frame(GroupChat_frame.GroupChat_frame)) )
             meeting_button = CTkButton(self, text="Meeting", image=meeting_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
                               text_color='#131619', font=('Arial', 24), command=lambda: parent.show_frame(Meeting_frame.Meeting_frame))
             back_button = CTkButton(self, text="Back", image=back_icon, compound='left', hover_color='red', fg_color='#e1e6e9',
@@ -120,3 +125,11 @@ class Main_Screen(CTkFrame):
         def print_friend_list(self,ok):
             print("Danh sách bạn bè trong Segment2:", ok)
             
+        def update_group_screen(self,appController):
+            appController.OpenChatBox()
+            # Cập nhật Main_Screen với Friend_list mới
+            if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+                group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+                group_screen.update_friend_list(self.Friend_list)
+                
+                # self.main_screen.update_group_screen(appController)
