@@ -8,7 +8,7 @@ import bcrypt
  
 live_account_lock = threading.Lock()
 
-HOST = '192.168.1.102'
+HOST = '192.168.1.189'
 PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
@@ -20,7 +20,7 @@ FAIL='fail'
 END='x'
 LOGOUT='logout'
 OPENCHATBOX='openchatbox'
-
+SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 
 # Thiết lập kết nối đến cơ sở dữ liệu
@@ -68,7 +68,7 @@ def sendListConn(conn, list):
         response = conn.recv(1024)  # Nhận phản hồi từ client
         print(f"Phản hồi từ client sau khi nhận {item}: {response.decode(FORMAT)}")
     msg = "end"
-    print(f"Gửi thông báo kết thúc tới client {conn}")
+
     conn.send(msg.encode(FORMAT))
 
         
@@ -122,9 +122,7 @@ def checkSignUp(conn, lst, addr):  # Thêm đối số addr
         
 def checkLogin(conn, lst):
     print('Login start')
-    print(f"Received list: {lst}")
-    print(f"Current Ad list: {Ad}")
-    print(f"Current ID list: {ID}")
+
     try:
         if len(lst) < 2:
             print(f"Error: Received list does not have enough elements: {lst}")
@@ -157,7 +155,7 @@ def checkLogin(conn, lst):
                 Live_Account.append(account)
                 
                 sendList(conn, user_list)
-                print(Live_Account)
+
                 
             else:
                 msg = FAIL
@@ -189,10 +187,11 @@ def Remove_LiveAccount(conn):
                 ID.remove(user_email)
                 Conn.remove(conn)
                 Live_Account.remove(row)
+                
                 print(f"User with email {email} has disconnected.")
                 print(Live_Account)
                 conn.sendall("True".encode(FORMAT))
-                
+                conn.close()
                 return  # Exit after successful removal
 
         # Nếu không tìm thấy email 
@@ -230,7 +229,7 @@ def send_to_all():
             try:
                 option = UPDATE_ROOM
                 conn.sendall(option.encode(FORMAT))
-                print(f"Đã gửi lệnh {option} tới {conn}")
+
                 time.sleep(0.5)
             except Exception as e:
                 print(f"Lỗi khi gửi lệnh tới {conn}: {e}")
@@ -253,9 +252,9 @@ def update_new_friendlist(conn, Live_Account):
 
                 
                 # Tạo danh sách bạn bè trừ chính client hiện tại
-                friend_list = [user['email'] for user in Live_Account ]
+                friend_list = [user['email'] for user in Live_Account if user['conn'] != conn]
                 # if user['conn'] != conn_user
-                print(f"Gửi danh sách bạn bè {friend_list} tới client {conn_user}")
+
                     
                 # Gọi hàm sendListConn để gửi danh sách bạn bè
             sendListConn(conn, friend_list)
@@ -286,7 +285,11 @@ def send_message(msg, prefix="", destination=None, broadcast=False):
         if destination is not None:
             destination.send(send_msg)
     
-    
+def 
+
+
+
+   
 def handle_client(conn, addr):
     try:
         print(f"Client connected: {addr}")
@@ -334,8 +337,9 @@ def handle_client(conn, addr):
                 email = conn.recv(1024).decode(FORMAT)
                 OpenChatBox(conn,addr,Live_Account,email)
             elif msg == UPDATE_ROOM:
-                print(f'nhanh lenh {UPDATE_ROOM} tu {conn}')
                 update_new_friendlist(conn,Live_Account)
+            elif msg == SEND_MESSAGE:
+                
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 

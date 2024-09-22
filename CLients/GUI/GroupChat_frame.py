@@ -86,9 +86,9 @@ class GroupChat_frame(CTkFrame):
         # Thêm khung nhập Friend_listăn bản
         self.message_entry = CTkEntry(self.input_frame, placeholder_text="Type a message", width=500)
         self.message_entry.pack(side='left', padx=10, pady=10)
-
+        
         # Nút gửi tin nhắn
-        send_button = CTkButton(self.input_frame, text="Send", command=self.send_message)
+        send_button = CTkButton(self.input_frame, text="Send", command= lambda:(self.appController.sendMessage(self)))
         send_button.pack(side='right', padx=10, pady=10)
 
     def display_message(self, parent, message, is_self):
@@ -110,15 +110,16 @@ class GroupChat_frame(CTkFrame):
         msg_label = CTkLabel(msg_frame, text=message, text_color='black', font=('Arial', 14), padx=10, pady=5)
         msg_label.pack(fill='x')
 
-    def send_message(self):
-        # Lấy tin nhắn từ khung nhập
-        message = self.message_entry.get()
-        if message.strip() != "":
+    # def send_message(self):
+    #     # Lấy tin nhắn từ khung nhập
+    #     message = self.message_entry.get()
+    #     if message.strip() != "":
 
-            # Hiển thị tin nhắn của mình
-            self.display_message(self.message_frame, message, True)
-            # Xóa nội dung nhập
-            self.message_entry.delete(0, 'end')
+    #         # Hiển thị tin nhắn của mình
+    #         self.display_message(self.message_frame, message, True)
+    #         # Xóa nội dung nhập
+    #         self.message_entry.delete(0, 'end')
+    
     def update_friend_list(self, new_friend_list):
         self.Friend_list = new_friend_list
         print("Danh sách bạn bè trong GroupChat cập nhật:", self.Friend_list)

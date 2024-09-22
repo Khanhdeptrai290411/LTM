@@ -45,7 +45,7 @@ class Main_Screen(CTkFrame):
         frame = self.frames[page_class]
         frame.tkraise()
         
-        
+         
         
     def update_friend_list(self, new_friend_list):
     # Cập nhật danh sách bạn bè
@@ -125,11 +125,12 @@ class Main_Screen(CTkFrame):
         def print_friend_list(self,ok):
             print("Danh sách bạn bè trong Segment2:", ok)
             
-        def update_group_screen(self,appController):
-            appController.OpenChatBox()
-            # Cập nhật Main_Screen với Friend_list mới
-            if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
-                group_screen = self.frames[GroupChat_frame.GroupChat_frame]
-                group_screen.update_friend_list(self.Friend_list)
+        # def update_group_screen(self,appController):
+        #     appController.OpenChatBox()
+        #     # Cập nhật Main_Screen với Friend_list mới
+        #     if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+        #         group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+        #         group_screen.update_friend_list(self.Friend_list)
                 
                 # self.main_screen.update_group_screen(appController)
+        

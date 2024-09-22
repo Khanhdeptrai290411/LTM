@@ -73,5 +73,5 @@ class LogIn(CTkFrame):
         email = self.text_email.get()
         password = self.text_password.get()
         return email, password    
-
+    
 #--------connect--------------

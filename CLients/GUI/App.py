@@ -40,7 +40,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.1.102"
+HOST = "192.168.1.189"
 SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
@@ -50,7 +50,7 @@ FAIL='fail'
 END='x'
 LOGOUT='logout' 
 OPENCHATBOX='openchatbox'
-
+SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 class App(CTk):
     
@@ -291,6 +291,24 @@ class App(CTk):
                 print("Logout failed.")
         except Exception as e:
             print('Error: Server is not responding', str(e))
+    def sendMessage(self):
+        option = SEND_MESSAGE
+        client.sendall(option.encode(FORMAT))
+        
+    def sendMessageUser(self,currentFrame):
+        try:
+            option = SEND_MESSAGE
+            client.sendall(option.encode(FORMAT))
+            client.recv(1024)
+            message = currentFrame.message_entry.get()
+            client.sendall(message.encode(FORMAT))
+            
+            return message
+        except Exception as e:
+            print('no message', str(e))
+
+
+
 
     def handleClient(self):
         while self.connected:
