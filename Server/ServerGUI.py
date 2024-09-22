@@ -22,7 +22,7 @@ LOGOUT='logout'
 OPENCHATBOX='openchatbox'
 SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
-
+CREATE_GROUP = 'create_group'
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
     host='localhost',
@@ -40,6 +40,7 @@ server_socket.listen()
 print(f'Server running on {HOST}:{PORT}')
 print('Waiting for clients...')
 Live_Account=[]
+Groups=[]
 ID=[]
 Ad=[]
 Conn=[]
@@ -58,6 +59,7 @@ def Recv(conn):
     while item != "end":  
         lst.append(item)
         conn.sendall(item.encode(FORMAT))
+        print(f"nhan duoc {item}")
         item = conn.recv(1024).decode(FORMAT)
     return lst
 
@@ -275,17 +277,46 @@ def update_new_friendlist(conn, Live_Account):
 
         
         
-def send_message(msg, prefix="", destination=None, broadcast=False):
-    send_msg = bytes(prefix + msg, "utf-8")
-    if broadcast:
-        """Broadcasts a message to all the clients."""
-        for sock in clients:
-            sock.send(send_msg)
-    else:
-        if destination is not None:
-            destination.send(send_msg)
-    
-def 
+# def send_message(msg, prefix="", destination=None, broadcast=False):
+#     send_msg = bytes(prefix + msg, "utf-8")
+#     if broadcast:
+#         """Broadcasts a message to all the clients."""
+#         for sock in clients:
+#             sock.send(send_msg)
+#     else:
+#         if destination is not None:
+#             destination.send(send_msg)
+def CreateGroup(conn, friend_selected, group_name):
+    try:
+        created_at = datetime.now()
+        insert_group_query = "INSERT INTO `Group` (group_name, created_time) VALUES (%s, %s)"
+        cursor.execute(insert_group_query, (group_name,created_at))
+        group_id = cursor.lastrowid  # Get the generated group ID
+
+        # Step 2: Get user_id for each email in friend_selected
+        for email in friend_selected:
+            select_user_query = "SELECT user_id FROM User WHERE email = %s"
+            cursor.execute(select_user_query, (email,))
+            result = cursor.fetchone()
+            if result:
+                user_id = result[0]
+
+                # Step 3: Insert into Participant table
+                insert_participant_query = "INSERT INTO Participant (group_id, user_id) VALUES (%s, %s)"
+                cursor.execute(insert_participant_query, (group_id, user_id))
+            else:
+                print(f"Email {email} not found in the User table")
+
+        # Commit the transaction
+        db_conn.commit()
+        # Thêm logic xử lý tạo nhóm
+        print('Friend: ', friend_selected, 'Group name: ', group_name)
+        # Phản hồi lại client rằng việc tạo nhóm đã thành công
+        conn.sendall("GROUP_CREATED_SUCCESS".encode(FORMAT))
+    except Exception as e:
+        print(f"Error: {e}")
+        conn.sendall(f"Error: {e}".encode(FORMAT))
+
 
 
 
@@ -338,8 +369,18 @@ def handle_client(conn, addr):
                 OpenChatBox(conn,addr,Live_Account,email)
             elif msg == UPDATE_ROOM:
                 update_new_friendlist(conn,Live_Account)
-            elif msg == SEND_MESSAGE:
-                
+            # elif msg == SEND_MESSAGE:
+            elif msg == CREATE_GROUP:
+                print(f'nhan lenh {msg} tu client')
+                conn.sendall(msg.encode(FORMAT))
+                conn.recv(1024)
+                conn.sendall(msg.encode(FORMAT))
+                friend_selected = Recv(conn)
+                print(f"Selected friends: {friend_selected}")
+                conn.sendall(msg.encode(FORMAT))
+                group_name = conn.recv(1024).decode(FORMAT)
+                print(f"Group name: {group_name}")
+                CreateGroup(conn,friend_selected,group_name)
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 

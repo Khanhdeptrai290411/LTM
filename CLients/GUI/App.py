@@ -9,7 +9,7 @@ import LoginPage
 import EntryPage
 import HomePage
 import Document_frame
-
+import NewGroup
 import main_UI
 
 
@@ -52,6 +52,7 @@ LOGOUT='logout'
 OPENCHATBOX='openchatbox'
 SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
+CREATE_GROUP = 'create_group'
 class App(CTk):
     
     def __init__(self):
@@ -62,6 +63,7 @@ class App(CTk):
         self.User_info=[]
         self.user_info=[]
         self.Friend_list=[]
+
         self.title('C')
 
         #--------components----------------
@@ -87,8 +89,8 @@ class App(CTk):
             # Điều chỉnh kích thước của cửa sổ
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
-            window_width = int(screen_width * 0.8)  # Ví dụ: 80% chiều rộng màn hình
-            window_height = int(screen_height * 0.8)  # Ví dụ: 80% chiều cao màn hình
+            window_width = int(screen_width * 0.99)  # Ví dụ: 80% chiều rộng màn hình
+            window_height = int(screen_height * 0.99)  # Ví dụ: 80% chiều cao màn hình
             x = (screen_width - window_width) // 2
             y = (screen_height - window_height) // 2
             self.geometry(f"{window_width}x{window_height}+{x}+{y}")
@@ -106,6 +108,7 @@ class App(CTk):
     def sendList(self,client, list):
         for item in list:
             client.sendall(item.encode(FORMAT))
+            print('list co item: ',item)
             client.recv(1024)
         msg = "end"
         client.send(msg.encode(FORMAT))
@@ -291,22 +294,62 @@ class App(CTk):
                 print("Logout failed.")
         except Exception as e:
             print('Error: Server is not responding', str(e))
-    def sendMessage(self):
-        option = SEND_MESSAGE
+    # def sendMessage(self):
+    #     option = SEND_MESSAGE
+    #     client.sendall(option.encode(FORMAT))
+        
+    # def sendMessageUser(self,currentFrame):
+    #     try:
+    #         option = SEND_MESSAGE
+    #         client.sendall(option.encode(FORMAT))
+    #         client.recv(1024)
+    #         message = currentFrame.message_entry.get()
+    #         client.sendall(message.encode(FORMAT))
+            
+    #         return message
+    #     except Exception as e:
+    #         print('no message', str(e))
+
+    def createGroup(self):
+        option = CREATE_GROUP
+        print(f'gui yeu cau {option} den Server')
         client.sendall(option.encode(FORMAT))
         
-    def sendMessageUser(self,currentFrame):
+    def createGroupUser(self, curFrame):
+        friend_selected=[]
         try:
-            option = SEND_MESSAGE
-            client.sendall(option.encode(FORMAT))
-            client.recv(1024)
-            message = currentFrame.message_entry.get()
-            client.sendall(message.encode(FORMAT))
+            option = CREATE_GROUP
+            client.sendall(option.encode(FORMAT))  # Bước 1: Gửi yêu cầu tạo nhóm
+            print(f'gui lenh {option} them lan nua')
+            client.recv(1024)  # Nhận phản hồi từ server
+            print('nhan response')
+            # Bước 2: Gửi danh sách bạn bè được chọn
+            friend_selected = curFrame.selected_friends
+            email = self.user_info['email']
+            friend_selected.append(email)
             
-            return message
-        except Exception as e:
-            print('no message', str(e))
+            
+            # friend_selected = listUser
+            
+            self.sendList(client, friend_selected)
+            print(f'gui list {friend_selected}')
+            client.recv(1024)  # Nhận phản hồi từ server
+            print('nhan respone lan 2')
+            # Bước 3: Gửi tên nhóm
+            group_name = curFrame.group_name
+            # group_name=groupname
+            client.sendall(group_name.encode(FORMAT))
+            print(f'gui ten group {group_name}')
+            print('List bạn bè đã chọn:', friend_selected, 'Tên nhóm:', group_name)
 
+            # Bước 4: Nhận phản hồi từ server về việc tạo nhóm
+            response = client.recv(1024).decode(FORMAT)
+            if response == "GROUP_CREATED_SUCCESS":
+                print("Nhóm đã được tạo thành công!")
+            else:
+                print("Lỗi khi tạo nhóm:", response)
+        except Exception as e:
+            print('Error: Server is not responding', str(e))
 
 
 
@@ -314,7 +357,7 @@ class App(CTk):
         while self.connected:
             print(f'dang o {client} ')
             data = client.recv(1024).decode(FORMAT) # nhan lan 1 cua handle ben server
-            print(data)
+            print(data,'7749')
             if data:
                 if data == LOGOUT:
                     self.LogoutUser()
@@ -337,7 +380,9 @@ class App(CTk):
                     self.SignUpUser(self.frames[SignupPage.SignUp])
                 elif data == OPENCHATBOX:
                     self.OpenChatBoxUser()
-                 
+                elif data == CREATE_GROUP:
+                    print(f'nhan lenh {data} tu Server')
+                    self.createGroupUser(self.frames[main_UI.Main_Screen].frames[NewGroup.CreateGroup_frame])
                 
  # Giảm tải chu kỳ của thread
 
@@ -384,12 +429,10 @@ class App(CTk):
             # Gọi hàm Recv để nhận danh sách bạn bè từ server
             self.Friend_list = lst
 
-            # Kiểm tra xem danh sách bạn bè có hợp lệ không
-            if self.Friend_list:
-                print("Danh sách bạn bè cập nhật:", self.Friend_list)
-                self.update_main_screen()  # Cập nhật lại giao diện với danh sách mới
-            else:
-                print("Không có bạn bè nào trong danh sách.")
+
+            print("Danh sách bạn bè cập nhật:", self.Friend_list)
+            self.update_main_screen()  # Cập nhật lại giao diện với danh sách mới
+  
 
         except Exception as e:
             print('Error: Server is not responding', str(e))

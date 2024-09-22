@@ -12,7 +12,7 @@ class GroupChat_frame(CTkFrame):
         
         # Cấu hình grid tổng thể
         self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=3)
+        self.grid_columnconfigure(1, weight=4)
         self.grid_columnconfigure(2, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=9)  # Hàng thứ hai cho phần chat lớn hơn
@@ -52,11 +52,11 @@ class GroupChat_frame(CTkFrame):
     def create_chat_body(self):
         # Khung chính của khu vực chat
         chat_body = CTkFrame(self, fg_color='#eaeaea')
-        chat_body.grid(row=1, column=1, sticky='nsew', padx=10, pady=10)
+        chat_body.grid(row=1, column=1, sticky='nsew', padx=5, pady=5)
 
         # Khung chính để chứa nội dung tin nhắn có thanh cuộn
         chat_scroll_frame = CTkFrame(chat_body, fg_color='#ffffff')
-        chat_scroll_frame.pack(expand=True, fill='both', padx=10, pady=10)
+        chat_scroll_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
         # Canvas để thêm thanh cuộn
         self.message_canvas = CTkCanvas(chat_scroll_frame, bg='white')
@@ -85,11 +85,11 @@ class GroupChat_frame(CTkFrame):
 
         # Thêm khung nhập Friend_listăn bản
         self.message_entry = CTkEntry(self.input_frame, placeholder_text="Type a message", width=500)
-        self.message_entry.pack(side='left', padx=10, pady=10)
+        self.message_entry.pack(side='left', padx=5, pady=5)
         
         # Nút gửi tin nhắn
         send_button = CTkButton(self.input_frame, text="Send", command= lambda:(self.appController.sendMessage(self)))
-        send_button.pack(side='right', padx=10, pady=10)
+        send_button.pack(side='right', padx=5, pady=5)
 
     def display_message(self, parent, message, is_self):
         # Khung chính cho tin nhắn
@@ -116,7 +116,7 @@ class GroupChat_frame(CTkFrame):
     #     if message.strip() != "":
 
     #         # Hiển thị tin nhắn của mình
-    #         self.display_message(self.message_frame, message, True)
+    #         self.display_message(self.message_frame, message, True)   
     #         # Xóa nội dung nhập
     #         self.message_entry.delete(0, 'end')
     
@@ -129,11 +129,11 @@ class GroupChat_frame(CTkFrame):
     
     def create_friends_list(self):
         friends_list = CTkFrame(self, fg_color='#f4f4f4')
-        friends_list.grid(row=0, column=2, rowspan=2, sticky='nsew', padx=10, pady=10)
+        friends_list.grid(row=0, column=2, rowspan=2, sticky='nsew', padx=5, pady=5)
 
         # Tiêu đề danh sách bạn bè
         friends_title = CTkLabel(friends_list, text="Friends", text_color='black', font=('Arial', 18, 'bold'))
-        friends_title.pack(pady=10)
+        friends_title.pack(pady=5)
 
         # Hiển thị danh sách bạn bè
         friends = self.Friend_list
@@ -142,14 +142,10 @@ class GroupChat_frame(CTkFrame):
 
     def create_friend_item(self, parent, friend_name):
         friend_frame = CTkFrame(parent, fg_color='#ffffff', corner_radius=5)
-        friend_frame.pack(fill='x', padx=10, pady=5)
+        friend_frame.pack(fill='x', padx=5, pady=5)
 
         # Tên bạn bè
-        friend_label = CTkLabel(friend_frame, text=friend_name, text_color='black', font=('Arial', 16), anchor='w')
-        friend_label.pack(side='left', padx=10, pady=10)
-
-        # Nút chat với bạn
-        chat_button = CTkButton(friend_frame, text="Chat", width=70, height=30, hover_color='#00aaff',command= lambda: self.Change_header_name())
-        chat_button.pack(side='right', padx=10, pady=10)
+        friend_label = CTkButton(friend_frame, text=friend_name, text_color='black', font=('Arial', 16), anchor='w')
+        friend_label.pack(side='left', padx=5, pady=5)
 
     

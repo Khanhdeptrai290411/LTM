@@ -38,7 +38,7 @@ class LogIn(CTkFrame):
         set_appearance_mode("light")
         appController.geometry("900x500+300+200")
         # Tạo các phần tử giao diện và hình ảnh
-        image_path = '/home/khanh/Documents/Server/CLients/GUI/Images/login.png'
+        image_path = 'Images/login.png'
         image = Image.open(image_path)
         self.my_image = ImageTk.PhotoImage(image)
         image_label = Label(self, image=self.my_image, bg='white')
