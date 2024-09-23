@@ -5,10 +5,12 @@ import time
 import mysql.connector
 from datetime import datetime
 import bcrypt
+import pickle
+
  
 live_account_lock = threading.Lock()
 
-HOST = '192.168.1.189'
+HOST = 'localhost'
 PORT = 65434
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
@@ -22,7 +24,11 @@ LOGOUT='logout'
 OPENCHATBOX='openchatbox'
 SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
+UPDATE_GROUP='update_group'
 CREATE_GROUP = 'create_group'
+UPDATE_GROUP_LIST='update_group_list'
+OPEN_WINDOW_CHAT='open_window_chat'
+
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
     host='localhost',
@@ -157,7 +163,9 @@ def checkLogin(conn, lst):
                 Live_Account.append(account)
                 
                 sendList(conn, user_list)
-
+                
+                
+                update_group_list(conn)
                 
             else:
                 msg = FAIL
@@ -235,7 +243,34 @@ def send_to_all():
                 time.sleep(0.5)
             except Exception as e:
                 print(f"Lỗi khi gửi lệnh tới {conn}: {e}")
+def update_group_list(conn):
+    
+    option=UPDATE_GROUP_LIST
+    conn.sendall(option.encode(FORMAT))
+    conn.recv(1024)
+    print("Da nhan lenh phan hoi tu client UPDATE_GROUP_LIST")
+    conn.sendall(option.encode(FORMAT))
+    print("Gui lenh yeu cau gui UserID -> Update_group_list")
+    user_id=conn.recv(1024).decode(FORMAT)
+    print("Da nhan user_id",user_id)
+    conn.sendall(user_id.encode(FORMAT))
+    
 
+    
+    
+    cursor.execute('SELECT g.group_name, g.id FROM Participant p JOIN `Group` g ON g.id=p.group_id WHERE user_id = %s ', (user_id,))
+    group_list = cursor.fetchall()
+    print("Group nhan duoc la ",group_list)
+    
+    
+    
+    data=pickle.dumps(group_list)
+    conn.sendall(data)
+    print("da gui group_list qua cho user")
+    
+
+    print("List cua nguoi dung", group_list)
+    print("Da update group cho ",conn)
     
 
 
@@ -318,7 +353,9 @@ def CreateGroup(conn, friend_selected, group_name):
         conn.sendall(f"Error: {e}".encode(FORMAT))
 
 
-
+#Xu li tin nhan 
+def OpenWindowChat(conn,group_id):
+    cursor.execute('SELECT * FROM Participant p JOIN `Group` g ON g.id=p.group_id where')
 
    
 def handle_client(conn, addr):
@@ -369,6 +406,8 @@ def handle_client(conn, addr):
                 OpenChatBox(conn,addr,Live_Account,email)
             elif msg == UPDATE_ROOM:
                 update_new_friendlist(conn,Live_Account)
+            elif msg == UPDATE_GROUP_LIST:
+                update_group_list(conn)
             # elif msg == SEND_MESSAGE:
             elif msg == CREATE_GROUP:
                 print(f'nhan lenh {msg} tu client')
@@ -381,6 +420,20 @@ def handle_client(conn, addr):
                 group_name = conn.recv(1024).decode(FORMAT)
                 print(f"Group name: {group_name}")
                 CreateGroup(conn,friend_selected,group_name)
+            elif msg == OPEN_WINDOW_CHAT:
+                print(f'nhan lenh open window chat tu ',conn)
+                    
+                update_group_list(conn)
+            elif msg == SEND_MESSAGE:
+                print(f'nhan lenh open window chat tu ',conn)
+                conn.sendall(msg.encode(FORMAT))
+                print("Da gui xac nhan Send Message",conn)
+                group_id=conn.recv(1024).decode(FORMAT)  
+                print("Da nhan id_group Message",group_id)
+
+                                  
+           
+            # elif msg == SEND_MESSAGE:
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
