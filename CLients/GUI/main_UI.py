@@ -15,6 +15,7 @@ class Main_Screen(CTkFrame):
         
         self.appcontroller = appcontroller
         self.Friend_list = appcontroller.Friend_list
+        self.group_list=appcontroller.Group_list
         self.selected_Friend=[]
         self.group_name=None
         
@@ -48,6 +49,13 @@ class Main_Screen(CTkFrame):
         frame.tkraise()
         
          
+    def Update_ChatGroup_List(self,Friend_list,Group_list):
+        if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+            print('da bam')
+            group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+
+            group_screen.Update_ChatGroup_List(Friend_list,Group_list)
+           
         
     def update_friend_list(self, new_friend_list):
     # Cập nhật danh sách bạn bè
@@ -62,7 +70,19 @@ class Main_Screen(CTkFrame):
         if hasattr(self, 'frames') and NewGroup.CreateGroup_frame in self.frames:
             create_group_screen = self.frames[NewGroup.CreateGroup_frame]
             create_group_screen.update_friend_list(self.Friend_list)
+            print("Co thuc hien ham nay khong")
+            
+    def update_group_list(self, new_group_list):
+    # Cập nhật danh sách bạn bè
+        self.group_list = new_group_list
+        print("Danh sách nhom moi:", self.group_list)
 
+        # Cập nhật lại các giao diện liên quan
+        if hasattr(self, 'frames') and GroupChat_frame.GroupChat_frame in self.frames:
+            print('da bam')
+            group_screen = self.frames[GroupChat_frame.GroupChat_frame]
+            group_screen.update_group_list(self.group_list)  # Cập nhật giao diện GroupChat
+      
    
             
     class Segment2(CTkFrame):

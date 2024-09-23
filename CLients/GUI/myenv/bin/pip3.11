@@ -1,4 +1,6 @@
-#!/home/khanh/Documents/Server/CLients/GUI/myenv/bin/python3
+#!/bin/sh
+'''exec' "/media/leducanhviet/New Volume/Project/ChatVipPro/LTM2/CLients/GUI/myenv/bin/python3" "$0" "$@"
+' '''
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,5 +1,7 @@
 import threading
 import time
+import GroupChat_frame
+import NewGroup
 from customtkinter import *
 import tkinter
 from PIL import Image  # Import PIL để mở hình ảnh
@@ -9,7 +11,8 @@ import LoginPage
 import EntryPage
 import HomePage
 import Document_frame
-import NewGroup
+import pickle
+
 import main_UI
 
 
@@ -40,7 +43,7 @@ import main_UI
 
 
 import bcrypt
-HOST = "192.168.1.189"
+HOST = "localhost"
 SERVER_PORT = 65434
 FORMAT = "utf8"
 OK = 'ok'
@@ -53,6 +56,8 @@ OPENCHATBOX='openchatbox'
 SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 CREATE_GROUP = 'create_group'
+UPDATE_GROUP_LIST='update_group_list'
+UPDATE_GROUP='update_group'
 class App(CTk):
     
     def __init__(self):
@@ -63,7 +68,9 @@ class App(CTk):
         self.User_info=[]
         self.user_info=[]
         self.Friend_list=[]
-
+        self.Group_list=[]
+        self.id_group_to_send=[]
+        self.messageContent=''
         self.title('C')
 
         #--------components----------------
@@ -89,8 +96,8 @@ class App(CTk):
             # Điều chỉnh kích thước của cửa sổ
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
-            window_width = int(screen_width * 0.99)  # Ví dụ: 80% chiều rộng màn hình
-            window_height = int(screen_height * 0.99)  # Ví dụ: 80% chiều cao màn hình
+            window_width = int(screen_width * 0.8)  # Ví dụ: 80% chiều rộng màn hình
+            window_height = int(screen_height * 0.8)  # Ví dụ: 80% chiều cao màn hình
             x = (screen_width - window_width) // 2
             y = (screen_height - window_height) // 2
             self.geometry(f"{window_width}x{window_height}+{x}+{y}")
@@ -108,7 +115,6 @@ class App(CTk):
     def sendList(self,client, list):
         for item in list:
             client.sendall(item.encode(FORMAT))
-            print('list co item: ',item)
             client.recv(1024)
         msg = "end"
         client.send(msg.encode(FORMAT))
@@ -294,9 +300,10 @@ class App(CTk):
                 print("Logout failed.")
         except Exception as e:
             print('Error: Server is not responding', str(e))
-    # def sendMessage(self):
-    #     option = SEND_MESSAGE
-    #     client.sendall(option.encode(FORMAT))
+    def sendMessage(self,id_group,message_content):
+        option = SEND_MESSAGE
+        self.id_group_to_send=id_group
+        client.sendall(option.encode(FORMAT))
         
     # def sendMessageUser(self,currentFrame):
     #     try:
@@ -309,12 +316,16 @@ class App(CTk):
     #         return message
     #     except Exception as e:
     #         print('no message', str(e))
-
+    # def sendMessageUser(self,currentFrame):
+    #     try:
+    #         option =
+    #     except Exception as e:
+    #         print('No message', str(e))
+        
     def createGroup(self):
         option = CREATE_GROUP
         print(f'gui yeu cau {option} den Server')
         client.sendall(option.encode(FORMAT))
-        
     def createGroupUser(self, curFrame):
         friend_selected=[]
         try:
@@ -351,13 +362,13 @@ class App(CTk):
         except Exception as e:
             print('Error: Server is not responding', str(e))
 
-
-
     def handleClient(self):
         while self.connected:
             print(f'dang o {client} ')
             data = client.recv(1024).decode(FORMAT) # nhan lan 1 cua handle ben server
-            print(data,'7749')
+            print(data)
+            
+            
             if data:
                 if data == LOGOUT:
                     self.LogoutUser()
@@ -383,10 +394,43 @@ class App(CTk):
                 elif data == CREATE_GROUP:
                     print(f'nhan lenh {data} tu Server')
                     self.createGroupUser(self.frames[main_UI.Main_Screen].frames[NewGroup.CreateGroup_frame])
+                elif data == UPDATE_GROUP_LIST:
+                    print(f'nhan lenh {data} tu Server')
+                    client.sendall(data.encode(FORMAT))
+                    print("Da xac nhan server UPDATE_GROUP_LIST")
+                    
+                    client.recv(1024)
+                    print("Da tiep nhan lenh yeu cau gui user_Id")  
+                    user_id=self.user_info["user_id"]
+                    client.sendall(user_id.encode(FORMAT))
+                    client.recv(1024)
+                    print("Da nhan xac nhan nhan user_id")
+                    data=client.recv(1024)
+                    group_list=pickle.loads(data)
+                    
+                    print("Group nhan duoc la",group_list)
+                    
+                    self.Group_list=group_list
+                    self.frames[main_UI.Main_Screen].Update_ChatGroup_List(self.Friend_list,self.Group_list)
+             
+                    #Cap nhap lai thanh Update_ChatGroup_List
+                    # self.update_main_screen()
+                    # self.updateGroupList(self.frames[main_UI.Main_Screen].frames[GroupChat_frame.GroupChat_frame])
+
+                elif data == SEND_MESSAGE:
+                    print(f'nhan lenh {data} tu Server')
+                    client.sendall(self.id_group_to_send.encode(FORMAT))
+                    print("Da gui id")
+              
+                
+                 
                 
  # Giảm tải chu kỳ của thread
 
     
+    # def updateGroupList(self):
+    #     Curframe.group_list=self.Group_list
+    #     Curframe.Update_ChatGroup_List()
     
     def OpenChatBox(self):
         option = OPENCHATBOX
@@ -429,22 +473,27 @@ class App(CTk):
             # Gọi hàm Recv để nhận danh sách bạn bè từ server
             self.Friend_list = lst
 
-
-            print("Danh sách bạn bè cập nhật:", self.Friend_list)
-            self.update_main_screen()  # Cập nhật lại giao diện với danh sách mới
-  
+            # Kiểm tra xem danh sách bạn bè có hợp lệ không
+            if self.Friend_list:
+                print("Danh sách bạn bè cập nhật:", self.Friend_list)
+                # self.update_main_screen()  # Cập nhật lại giao diện với danh sách mới
+                self.frames[main_UI.Main_Screen].Update_ChatGroup_List(self.Friend_list,self.Group_list) # doi thanh Update Chat Group
+            else:
+                print("Không có bạn bè nào trong danh sách.")
 
         except Exception as e:
             print('Error: Server is not responding', str(e))
             return []
 
 
-
+    
+        
     def update_main_screen(self):
         # Cập nhật Main_Screen với Friend_list mới
         if hasattr(self, 'frames') and main_UI.Main_Screen in self.frames:
             main_screen = self.frames[main_UI.Main_Screen]
-            main_screen.update_friend_list(self.Friend_list)   
+            main_screen.update_friend_list(self.Friend_list)
+            main_screen.update_group_list(self.Group_list)
     
 
             
