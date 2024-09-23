@@ -1,5 +1,6 @@
 from customtkinter import *
 from PIL import Image  # Để load hình ảnh
+from tkinter.messagebox import showinfo 
 
 class GroupChat_frame(CTkFrame):
     def __init__(self,parent,appController):
@@ -145,7 +146,7 @@ class GroupChat_frame(CTkFrame):
         friend_frame.pack(fill='x', padx=5, pady=5)
 
         # Tên bạn bè
-        friend_label = CTkButton(friend_frame, text=friend_name, text_color='black', font=('Arial', 16), anchor='w')
+        friend_label = CTkButton(friend_frame, text=friend_name, text_color='black', font=('Arial', 16), anchor='w',fg_color='#ffffff',command= lambda f = friend_name : self.appController.CallVideo(f))
         friend_label.pack(side='left', padx=5, pady=5)
 
     

@@ -5,11 +5,12 @@ import time
 import mysql.connector
 from datetime import datetime
 import bcrypt
+import pickle
  
 live_account_lock = threading.Lock()
 
 HOST = '192.168.1.189'
-PORT = 65438
+PORT = 65439
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
@@ -24,6 +25,8 @@ SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 CREATE_GROUP = 'create_group'
 KICK_USER = 'kick_user'
+CALLVIDEO='call_video'
+REQUESTCALL='request_call'
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
     host='localhost',
@@ -46,6 +49,9 @@ ID=[]
 Ad=[]
 Conn=[]
 User_info=[]
+friend_to_call = None
+user_call_email = None
+ip_addr_user_call = None
 def send_Clients(conn, clients_list):
     print("send client start")
     # Send the list of clients
@@ -346,6 +352,52 @@ def kick_user(conn):
         print(f"Lỗi trong hàm kick_user: {e}")
         conn.sendall(f"Lỗi khi kick người dùng: {e}".encode(FORMAT))
 
+def SendRequest(conn, friend, user_send, ip_address):
+    # Tìm kết nối của friend trong danh sách tài khoản trực tuyến
+    data_send=(friend,user_send,ip_address)
+    friend_conn = None
+    for account in Live_Account:
+        if account['email'] == friend:
+            friend_conn = account['conn']
+            break
+    
+    if friend_conn:
+        # Gửi yêu cầu cuộc gọi video đến friend
+        try:
+            print(f"Đang gửi yêu cầu gọi từ {user_send} đến {friend} với IP: {ip_address}")
+
+            option = REQUESTCALL
+            friend_conn.sendall(option.encode(FORMAT))  # Gửi yêu cầu cuộc gọi đến friend
+            time.sleep(0.1)
+            
+            friend_conn.sendall(pickle.dumps(data_send))
+            
+            
+            
+            print(f"Yêu cầu gọi video đã được gửi thành công tới {friend}")
+        
+        except Exception as e:
+            print(f"Lỗi khi gửi yêu cầu tới {friend}: {str(e)}")
+    else:
+        # Nếu không tìm thấy friend trong danh sách online
+        print(f"{friend} hiện không online.")
+        print(f"Không tìm thấy {friend} trong danh sách tài khoản trực tuyến.")
+
+def SendRequestFrom(conn,email_usercall,friend_email,ip_addr_user):
+    email=email_usercall
+    friend=friend_email
+    ip_addr=ip_addr_user
+    option = REQUESTCALL
+    conn.sendall(option.encode(FORMAT))
+    conn.recv(1024)
+    print(email,' :email', friend,' :email cua ban',ip_addr, ' :ip')
+    conn.sendcall(email.encode(FORMAT))
+    conn.recv(1024)
+    conn.sendcall(friend.encode(FORMAT))
+    conn.recv(1024)
+    conn.sendcall(ip_addr.encode(FORMAT))
+    conn.recv(1024)
+    
     
 def handle_client(conn, addr):
     try:
@@ -417,6 +469,33 @@ def handle_client(conn, addr):
                 print('phan hoi den ham kick_user_onl')
                 kick_user(conn)
                 send_to_all()
+            elif msg == CALLVIDEO:
+                print(f'nhan lenh {msg} tu admin')
+                conn.sendall(msg.encode(FORMAT))
+                print('phan hoi den admin')
+                conn.recv(1024)
+                print('nhan phan hoi tu ham call')
+                conn.sendall(msg.encode(FORMAT))
+                print('phan hoi den ham call')
+                friend_to_call=conn.recv(1024).decode(FORMAT)
+                print(friend_to_call)
+                conn.sendall(friend_to_call.encode(FORMAT))
+                user_call_email = conn.recv(1024).decode(FORMAT)
+                print(user_call_email)
+                conn.sendall(user_call_email.encode(FORMAT))
+                ip_addr_user_call= conn.recv(1024).decode(FORMAT)
+                print(ip_addr_user_call)
+                SendRequest(conn,friend_to_call,user_call_email,ip_addr_user_call)
+            # elif msg == REQUESTCALL:
+            #     conn.sendall(msg.encode(FORMAT))
+            #     friend_to_call=conn.recv(1024).decode(FORMAT)
+            #     conn.sendall(msg.encode(FORMAT))
+            #     user_call_email=conn.recv(1024).decode(FORMAT)
+            #     conn.sendall(msg.encode(FORMAT))
+            #     ip_addr_user_call=conn.recv(1024).decode(FORMAT)
+            #     conn.sendall(msg.encode(FORMAT))
+            #     conn.recv(1024)
+            #     SendRequestFrom(conn,user_call_email,friend_to_call,ip_addr_user_call)
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 

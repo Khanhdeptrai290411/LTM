@@ -11,7 +11,7 @@ import HomePage
 import Document_frame
 import NewGroup
 import main_UI
-
+from vidstream import *
 
 
 
@@ -40,8 +40,9 @@ import main_UI
 
 
 import bcrypt
+import pickle
 HOST = "192.168.1.189"
-SERVER_PORT = 65438
+SERVER_PORT = 65439
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -54,6 +55,8 @@ SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 CREATE_GROUP = 'create_group'
 KICK_USER = 'kick_user'
+CALLVIDEO='call_video'
+REQUESTCALL='request_call'
 class App(CTk):
     
     def __init__(self):
@@ -64,9 +67,11 @@ class App(CTk):
         self.User_info=[]
         self.user_info=[]
         self.Friend_list=[]
-
+        self.friend_to_call=None
         self.title('C')
-
+        self.video_server = None  # Thêm thuộc tính video_server để lưu server
+        self.server_thread = None  # Thêm thuộc tính server_thread để lưu luồng server
+        self.local_ip_address=None
         #--------components----------------
         container = CTkFrame(self)  # Đảm bảo container có master
         container.pack(fill="both", expand=True)
@@ -191,7 +196,7 @@ class App(CTk):
                         'status': fields[5],
                         'created_at': fields[6]
                     }
-                    
+                    self.serverToCall()
                     self.show_frame(main_UI.Main_Screen)
         except Exception as e:
             print('Error: Server is not responding', str(e))
@@ -260,10 +265,11 @@ class App(CTk):
                     'created_at': fields[6]
                 }
                 print(self.user_info['user_name'])
+                self.serverToCall()
                 self.show_frame(main_UI.Main_Screen)
                 self.title(self.user_info.get('email') if self.user_info else 'C')
                 print("da chay xong loginuser")
-
+         
         except Exception as e:
             print('Error: Server is not responding', str(e))
     
@@ -288,7 +294,7 @@ class App(CTk):
             print(response)
             if response == "True":
                 self.show_frame(LoginPage.LogIn)
-                
+                self.stopServer()
                 client.close()
                 print('disconnected from server')
             else:
@@ -352,8 +358,28 @@ class App(CTk):
         except Exception as e:
             print('Error: Server is not responding', str(e))
 
-
-
+    def CallVideo(self,friend):
+        option = CALLVIDEO
+        self.friend_to_call=friend
+        client.sendall(option.encode(FORMAT))
+    def CallVideoUser(self):
+        option = CALLVIDEO
+        client.sendall(option.encode(FORMAT))
+        client.recv(1024)
+        friend = self.friend_to_call
+        print(friend, ' day la email cua ban call')
+        client.sendall(friend.encode(FORMAT))
+        client.recv(1024)
+        email = self.user_info['email']
+        print(email,' day la email cua minh')
+        client.sendall(email.encode(FORMAT))
+        client.recv(1024)
+        print('day la dia chi ip ',self.local_ip_address)
+        client.sendall(self.local_ip_address.encode(FORMAT))
+    
+    
+    
+    
     def handleClient(self):
         while self.connected:
             print(f'dang o {client} ')
@@ -377,8 +403,10 @@ class App(CTk):
                    
                 elif data == LOGIN:
                     self.LogInUser(self.frames[LoginPage.LogIn])
+                    
                 elif data == SIGNUP:
                     self.SignUpUser(self.frames[SignupPage.SignUp])
+                    
                 elif data == OPENCHATBOX:
                     self.OpenChatBoxUser()
                 elif data == CREATE_GROUP:
@@ -387,6 +415,35 @@ class App(CTk):
                 elif data == KICK_USER:
                     self.show_frame(LoginPage.LogIn)
                     client.close()
+                elif data == CALLVIDEO:
+                    self.CallVideoUser()
+                elif data == REQUESTCALL:
+                    print(f'nhan lenh {data} tu admin')
+                    data_recv=client.recv(1024)
+                    data_loads=pickle.loads(data_recv)
+                    friend=data_loads[0]
+                    my_email=data_loads[1]
+                    ip=data_loads[2]
+                    print(data_loads[0])
+                    self.show_call_notification(friend, my_email, ip)
+                    # client.sendall(data.encode(FORMAT))
+                    # print('phan hoi den admin')
+                    
+                    # client.recv(1024)
+                    
+                    # client.sendall(friend.encode(FORMAT))
+                    # client.recv(1024)
+                    
+                    # client.sendall(my_email.encode(FORMAT))
+                    # client.recv(1024)
+                    
+                    # client.sendall(ip.encode(FORMAT))
+                    # client.recv(1024)
+                    
+                    # print('nhan phan hoi tu ham request')
+                    # client.sendall(data.encode(FORMAT))
+                    # print('phan hoi den ham request')
+                    # client.recv
  # Giảm tải chu kỳ của thread
 
     
@@ -464,11 +521,111 @@ class App(CTk):
         except Exception as e:
             self.connected = False  # Đặt trạng thái kết nối là False nếu xảy ra lỗi
             print(f"Failed to connect: {str(e)}")
-
-
             
-               
+            
+            
+            
+    def get_local_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # Kết nối tới máy chủ DNS của Google để lấy IP cục bộ
+            s.connect(("8.8.8.8", 80))
+            ip_address = s.getsockname()[0]
+        except Exception:
+            # Nếu không thể lấy IP cục bộ, sử dụng localhost
+            ip_address = "127.0.0.1"
+        finally:
+            s.close()
+        return ip_address
+    def serverToCall(self):
+        # Tạo server lắng nghe video
+        local_ip_address = self.get_local_ip()
+        self.local_ip_address = local_ip_address
+        self.video_server = StreamingServer(local_ip_address, 33333)  # Dùng IP cục bộ và cổng 12345
 
+        # Chạy server trên luồng riêng để không chặn giao diện
+        self.server_thread = threading.Thread(target=self.video_server.start_server)
+        self.server_thread.start()
+
+        print(f"Video server is running at {local_ip_address}:12345")
+        
+    def stopServer(self):
+        if self.video_server:
+            self.video_server.stop_server()  # Dừng server nếu nó đang chạy
+            print("Video server has been stopped.")
+            self.video_server = None  # Xóa tham chiếu tới server để tránh sử dụng lại
+        if self.server_thread:
+            self.server_thread.join()  # Đợi luồng server dừng hẳn
+            self.server_thread = None
+    def show_call_notification(self, friend, my_email, ip):
+    # Tạo một cửa sổ Toplevel (pop-up)
+        popup = CTkToplevel(self)
+        popup.title("Incoming Call")
+
+        # Đặt kích thước cửa sổ
+        popup.geometry("300x200")
+
+        # Hiển thị thông tin về cuộc gọi
+        label = CTkLabel(popup, text=f"{friend} is calling from {ip}.\nYour email: {my_email}")
+        label.pack(pady=20)
+
+        # Nút Accept Call
+        accept_button = CTkButton(popup, text="Accept", command=lambda: self.accept_call(popup, ip))
+        accept_button.pack(side="left", padx=20, pady=10)
+
+        # Nút Decline Call
+        decline_button = CTkButton(popup, text="Decline", command=popup.destroy)
+        decline_button.pack(side="right", padx=20, pady=10)
+
+
+    def accept_call(self, popup, target_ip):
+        print(f"Call Accepted! Streaming to {target_ip}")
+        popup.destroy()  # Đóng cửa sổ thông báo
+
+        # Bắt đầu cuộc gọi video
+        self.start_camera_stream(target_ip)
+
+        # Hiển thị giao diện cuộc họp với nút End Call
+        self.show_in_meeting_interface()
+
+    def start_camera_stream(self, target_ip):
+        self.camera_client = CameraClient(target_ip, 33333)  # Lưu đối tượng camera_client
+        self.camera_thread = threading.Thread(target=self.camera_client.start_stream)
+        self.camera_thread.start()
+        print(f"Streaming video to {target_ip}")
+
+               
+    def stop_camera_stream(self):
+        if self.camera_client:
+            self.camera_client.stop_stream()  # Dừng việc truyền phát video
+            self.camera_client = None
+            print("Camera stream stopped.")
+
+    def end_call(self, meeting_popup):
+    # Đóng cửa sổ cuộc họp
+        meeting_popup.destroy()
+        
+        # Dừng camera stream
+        self.stop_camera_stream()
+        
+        # Gửi thông báo kết thúc cuộc gọi đến server nếu cần
+        if self.connected:
+            client.sendall("END_CALL".encode(FORMAT))
+        
+        print("Call has ended.")
+    def show_in_meeting_interface(self):
+    # Tạo cửa sổ Toplevel mới cho giao diện cuộc họp
+        meeting_popup = CTkToplevel(self)
+        meeting_popup.title("In Call")
+
+        # Thiết lập kích thước cửa sổ cuộc họp
+        meeting_popup.geometry("400x300")
+
+        # Nút ngắt cuộc gọi
+        end_call_button = CTkButton(meeting_popup, text="End Call", command=lambda: self.end_call(meeting_popup))
+        end_call_button.pack(pady=20)
+
+        return meeting_popup
 
 
 # Tạo và chạy ứng dụng
