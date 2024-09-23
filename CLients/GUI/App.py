@@ -41,7 +41,7 @@ import main_UI
 
 import bcrypt
 HOST = "192.168.1.189"
-SERVER_PORT = 65434
+SERVER_PORT = 65438
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -53,6 +53,7 @@ OPENCHATBOX='openchatbox'
 SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 CREATE_GROUP = 'create_group'
+KICK_USER = 'kick_user'
 class App(CTk):
     
     def __init__(self):
@@ -362,15 +363,15 @@ class App(CTk):
                 if data == LOGOUT:
                     self.LogoutUser()
                 elif data == UPDATE_ROOM:
-                    print(f"Client {client} đã nhận lệnh UPDATE_ROOM, gửi xác nhận lại")
+
                     client.send(data.encode(FORMAT)) #gui toi handle ben kia
-                    print(f"Client {client} đã gửi xác nhận lệnh UPDATE_ROOM")
+
                     client.recv(1024)
-                    print(f"Client {client} đã nhận phản hồi từ server")
+
                     client.send(data.encode(FORMAT))
-                    print(f"Client {client} đã gửi lại lệnh xác nhận UPDATE_ROOM")
+
                     lst = self.Recv(client)
-                    print(f"Client {client} đã nhận danh sách bạn bè: {lst}")
+
                     self.Update_Room(lst)
                 
                    
@@ -383,7 +384,9 @@ class App(CTk):
                 elif data == CREATE_GROUP:
                     print(f'nhan lenh {data} tu Server')
                     self.createGroupUser(self.frames[main_UI.Main_Screen].frames[NewGroup.CreateGroup_frame])
-                
+                elif data == KICK_USER:
+                    self.show_frame(LoginPage.LogIn)
+                    client.close()
  # Giảm tải chu kỳ của thread
 
     

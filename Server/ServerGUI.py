@@ -9,7 +9,7 @@ import bcrypt
 live_account_lock = threading.Lock()
 
 HOST = '192.168.1.189'
-PORT = 65434
+PORT = 65438
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
@@ -23,6 +23,7 @@ OPENCHATBOX='openchatbox'
 SEND_MESSAGE='send_message'
 UPDATE_ROOM='update_room'
 CREATE_GROUP = 'create_group'
+KICK_USER = 'kick_user'
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
     host='localhost',
@@ -231,7 +232,7 @@ def send_to_all():
             try:
                 option = UPDATE_ROOM
                 conn.sendall(option.encode(FORMAT))
-
+                print(f'dang gui {option} toi {conn}')
                 time.sleep(0.5)
             except Exception as e:
                 print(f"Lỗi khi gửi lệnh tới {conn}: {e}")
@@ -247,16 +248,18 @@ def update_new_friendlist(conn, Live_Account):
 
 
             conn.sendall(option.encode(FORMAT))
-
+            print(f'dang gui xac nhan lai tu server {option}')
             conn.recv(1024)  # Nhận xác nhận từ client
+            
             for row in Live_Account:
                 conn_user = row['conn']
 
                 
                 # Tạo danh sách bạn bè trừ chính client hiện tại
-                friend_list = [user['email'] for user in Live_Account if user['conn'] != conn]
-                # if user['conn'] != conn_user
+                friend_list = [user['email'] for user in Live_Account if user['conn'] != conn and user['email'] != 'admin']
 
+                # if user['conn'] != conn_user
+                print('day la danh sach email ',friend_list)
                     
                 # Gọi hàm sendListConn để gửi danh sách bạn bè
             sendListConn(conn, friend_list)
@@ -319,8 +322,31 @@ def CreateGroup(conn, friend_selected, group_name):
 
 
 
+def kick_user(conn):
+    """Xử lý lệnh kick user khi nhận được yêu cầu từ admin."""
+    try:
+        # Nhận email của người cần kick từ admin
+        email_to_kick = conn.recv(1024).decode(FORMAT)
+        print(f"Yêu cầu kick người dùng: {email_to_kick}")
 
-   
+        # Tìm và ngắt kết nối của người dùng với email tương ứng
+        for user in Live_Account:
+            if user['email'] == email_to_kick:
+                user_conn = user['conn']
+                user_conn.sendall(KICK_USER.encode(FORMAT))
+                user_conn.close()  # Ngắt kết nối
+                Live_Account.remove(user)  # Loại bỏ người dùng khỏi danh sách
+                print(f"Đã kick người dùng với email: {email_to_kick}")
+                break
+
+        # Gửi xác nhận đã kick người dùng thành công
+        conn.sendall("KICK_SUCCESS".encode(FORMAT))
+
+    except Exception as e:
+        print(f"Lỗi trong hàm kick_user: {e}")
+        conn.sendall(f"Lỗi khi kick người dùng: {e}".encode(FORMAT))
+
+    
 def handle_client(conn, addr):
     try:
         print(f"Client connected: {addr}")
@@ -381,6 +407,16 @@ def handle_client(conn, addr):
                 group_name = conn.recv(1024).decode(FORMAT)
                 print(f"Group name: {group_name}")
                 CreateGroup(conn,friend_selected,group_name)
+            elif msg == KICK_USER:
+                print(f'nhan lenh {msg} tu admin')
+                conn.sendall(msg.encode(FORMAT))
+                print('phan hoi den admin')
+                conn.recv(1024)
+                print('nhan phan hoi tu ham kick_user_onl')
+                conn.sendall(msg.encode(FORMAT))
+                print('phan hoi den ham kick_user_onl')
+                kick_user(conn)
+                send_to_all()
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 

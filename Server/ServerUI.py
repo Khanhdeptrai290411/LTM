@@ -1,95 +1,57 @@
-import socket
 from customtkinter import *
-import threading
 
-HOST = '192.168.110.159'
-SERVER_PORT = 65434
-GET_CLIENTS = 'getclients'
-FORMAT = "utf8"
+class ServerPage(CTkFrame):
+    def __init__(self, parent, appController):
+        super().__init__(parent)
+        self.controller = appController  # For switching between frames
+        self.setup_frame()
+        self.Friend_list = []
 
-class ServerPage(CTk):
-    def __init__(self):
-        super().__init__()
-        self.geometry("900x500+300+200")
-        set_appearance_mode("light")
-        self.configure(fg_color="#20639b")
-
+    def setup_frame(self):
+        """ Set up the frame layout. """
+        # Frame title
         label_title = CTkLabel(self, text="\n ACTIVE ACCOUNT ON SERVER\n", font=("Helvetica", 18), fg_color='#20639b', bg_color="bisque2", text_color='#20639b')
         label_title.pack(pady=10)
 
+        # Content frame for displaying the list of users
         self.content = CTkFrame(self)
-        self.data = CTkTextbox(self.content, height=10, width=40, bg_color='floral white', fg_color='floral white', font=("Helvetica", 30))
-
-        button_log = CTkButton(self, text="REFRESH", fg_color='floral white', text_color='#20639b', hover=False, command=self.receive_data)
-        button_back = CTkButton(self, text="LOG OUT", fg_color='floral white', text_color='#20639b', hover=False)
-        
-        button_log.pack(side=BOTTOM, pady=5)
-        button_back.pack(side=BOTTOM, pady=5)
-
         self.content.pack(expand=True, fill=BOTH)
 
-        self.scroll = CTkScrollbar(self.content, orientation="vertical")
-        self.scroll.pack(side=RIGHT, fill=Y)
+        # Log out button (can trigger a controller method to log out)
+        button_back = CTkButton(self, text="LOG OUT", fg_color='floral white', text_color='#20639b', hover=False, command=self.logout)
+        button_back.pack(side=BOTTOM, pady=5)
 
-        self.data.configure(yscrollcommand=self.scroll.set)
-        self.scroll.configure(command=self.data.yview)
+    def logout(self):
+        """ Handle logout action (delegate to controller). """
+        self.controller.Logout()  # Assuming `controller` has a logout method.
 
-        self.data.pack(expand=True, fill=BOTH)
-
-        # Start a thread to receive data from server
-        threading.Thread(target=self.receive_data, daemon=True).start()
-
-    def Recv(self, client):
-        data = ""
-        while True:
-            try:
-                part = client.recv(1024).decode(FORMAT)
-                
-                # Check if connection is closed or if we receive an empty string
-                if not part:
-                    print("Received empty data, connection may be closed")
-                    break
-
-                if 'end' in part:
-                    data += part.split('end')[0]
-                    break
-                
-                data += part
-
-            except socket.error as e:
-                print(f"Error receiving data: {e}")
-                break
-
-        return data.split("\n")
-
-
-    def receive_data(self):
+    def update_friend_list(self, lst):
+        """ Update the frame with the latest room data (list of users). """
         try:
-            option = GET_CLIENTS
-            client.sendall(option.encode(FORMAT))
-            uu=client.recv(1024).decode(FORMAT)#nhan phan hoi rang da nhan lenh login tu server
-            print(uu)
-            # Receive and process the response from the server
-            recv_list = self.Recv(client)
-            print(recv_list)
-            # Update the content of the textbox
-            self.update_textbox(recv_list)
-            
+            # Clear the previous list
+            for widget in self.content.winfo_children():
+                widget.destroy()
+
+            self.Friend_list = lst
+            print("Danh sách bạn bè cập nhật:", self.Friend_list)
+
+            # Update the frame with new user list
+            for friend in self.Friend_list:
+                if friend:
+                    self.add_user_to_list(friend)
+
         except Exception as e:
-            print('Error: Server is not responding', str(e))
+            print(f"Error in update_room: {str(e)}")
 
-    def update_textbox(self, items):
-        # Clear current content
-        self.data.delete("1.0", "end")
-        # Insert new items
-        for item in items:
-            if item:  # Avoid inserting empty strings
-                self.data.insert("end", item + "\n")
+    def add_user_to_list(self, friend):
+        """ Add a single user to the displayed list with a 'Kick' button. """
+        frame = CTkFrame(self.content)
+        frame.pack(fill=X, pady=5)
 
+        label = CTkLabel(frame, text=friend, font=("Helvetica", 34))
+        label.pack(side=LEFT, padx=10, pady=5)
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect((HOST, SERVER_PORT))
+        kick_button = CTkButton(frame, text="Kick", fg_color='red', text_color='white', command=lambda f=friend: self.controller.kick_user(f))
+        kick_button.pack(side=RIGHT, padx=10)
 
-if __name__ == "__main__":
-    app = ServerPage()
-    app.mainloop()
+    
