@@ -44,7 +44,7 @@ import main_UI
 
 import bcrypt
 HOST = "localhost"
-SERVER_PORT = 65434
+SERVER_PORT = 65439
 FORMAT = "utf8"
 OK = 'ok'
 LOGIN='login'
@@ -58,6 +58,9 @@ UPDATE_ROOM='update_room'
 CREATE_GROUP = 'create_group'
 UPDATE_GROUP_LIST='update_group_list'
 UPDATE_GROUP='update_group'
+NEW_MESSAGE='new_message'
+SEND_MESSAGE='send_message'
+UPDATE_CHAT_MESSAGE='update_chat_message'
 class App(CTk):
     
     def __init__(self):
@@ -69,8 +72,9 @@ class App(CTk):
         self.user_info=[]
         self.Friend_list=[]
         self.Group_list=[]
-        self.id_group_to_send=[]
+        self.id_group_to_send=''
         self.messageContent=''
+        self.id_group_to_update=''
         self.title('C')
 
         #--------components----------------
@@ -303,6 +307,17 @@ class App(CTk):
     def sendMessage(self,id_group,message_content):
         option = SEND_MESSAGE
         self.id_group_to_send=id_group
+        self.messageContent=message_content
+        print(self.messageContent)
+        client.sendall(option.encode(FORMAT))
+    def UpdateChatRequest(self,id_group_current):
+        option = UPDATE_CHAT_MESSAGE
+        self.id_group_to_update=id_group_current
+        self.frames[main_UI.Main_Screen].frames[GroupChat_frame.GroupChat_frame].CurrentGroupId=id_group_current
+
+        print("In ra ",id_group_current)
+        # self.messageContent=message_content
+        print(self.messageContent)
         client.sendall(option.encode(FORMAT))
         
     # def sendMessageUser(self,currentFrame):
@@ -361,7 +376,16 @@ class App(CTk):
                 print("Lỗi khi tạo nhóm:", response)
         except Exception as e:
             print('Error: Server is not responding', str(e))
-
+    def receive_all(sock, buffer_size=1024):
+        data = b''
+        while True:
+            part = sock.recv(buffer_size)
+            data += part
+            if len(part) < buffer_size:
+                break  # Đã nhận đủ dữ liệu
+        return data
+    
+    
     def handleClient(self):
         while self.connected:
             print(f'dang o {client} ')
@@ -419,8 +443,44 @@ class App(CTk):
 
                 elif data == SEND_MESSAGE:
                     print(f'nhan lenh {data} tu Server')
+              
+                    self.id_group_to_send=str(self.id_group_to_send)
                     client.sendall(self.id_group_to_send.encode(FORMAT))
-                    print("Da gui id")
+                    print("Da gui id",self.id_group_to_send)
+                    client.recv(1024)
+                    print("Server da nhan id")
+                    client.sendall(user_id.encode(FORMAT))
+                    client.recv(1024)
+                    print("Server da nhan id_user")
+                    print("Noi dung mess",self.messageContent)
+                    client.sendall(self.messageContent.encode(FORMAT))
+                    client.recv(1024)
+                    print("Server da nhan content")
+                elif data == NEW_MESSAGE:
+                    print(f'nhan lenh {data} tu Server')
+                    
+                    data_recv=client.recv(1024)
+                    message=pickle.loads(data_recv)
+                    print("Message moi la", message)
+                elif data == UPDATE_CHAT_MESSAGE:
+                    print(f'nhan lenh {data} tu Server')
+                    client.sendall(data.encode(FORMAT))
+                    #Nhan tin hieu yeu cau gui groupId
+                    client.recv(1024)
+                    self.id_group_to_update=str(self.id_group_to_update)
+                    client.sendall(self.id_group_to_update.encode(FORMAT))
+                    Message_List=client.recv(1024)
+                    Message_List=pickle.loads(Message_List)
+                    print("Da lay dc message List",Message_List)
+                    print(self.id_group_to_update)
+                    self.frames[main_UI.Main_Screen].frames[GroupChat_frame.GroupChat_frame].Update_all_message(self.id_group_to_update,Message_List)
+                
+                    
+                    
+                    
+
+
+                    
               
                 
                  

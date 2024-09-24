@@ -10,7 +10,8 @@ class GroupChat_frame(CTkFrame):
         self.Friend_list = appController.Friend_list
         self.group_list = appController.Group_list
         self.Header_Name=[]
-        self.CurrentGroupId='1'
+        self.CurrentGroupId=''
+        self.message_content=''
         # Cấu hình grid tổng thể
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=4)
@@ -88,11 +89,7 @@ class GroupChat_frame(CTkFrame):
 
         self.message_frame.bind("<Configure>", lambda e: self.message_canvas.configure(scrollregion=self.message_canvas.bbox("all")))
 
-        # Tin nhắn từ người khác (bên trái)
-        self.display_message(self.message_frame, "Hello! How are you?", False)
 
-        # Tin nhắn của mình (bên phải)
-        self.display_message(self.message_frame, "I'm good, thank you!", True)
 
         # Khung để nhập tin nhắn
         self.input_frame = CTkFrame(chat_body, fg_color='#dfe3e6')
@@ -103,7 +100,7 @@ class GroupChat_frame(CTkFrame):
         self.message_entry.pack(side='left', padx=5, pady=5)
         
         # Nút gửi tin nhắn
-        send_button = CTkButton(self.input_frame, text="Send", command= lambda:(self.appController.sendMessage(self,self.CurrentGroupId)))
+        send_button = CTkButton(self.input_frame, text="Send", command= lambda:(self.SendMessage(self.CurrentGroupId,self.message_content)))
         send_button.pack(side='right', padx=5, pady=5)
 
     def display_message(self, parent, message, is_self):
@@ -140,6 +137,45 @@ class GroupChat_frame(CTkFrame):
         print("Danh sách bạn bè trong GroupChat cập nhật:", self.Friend_list)
         self.create_friends_list(self.ListFrame)  # Hàm này sẽ làm mới danh sách bạn bè
 
+    def SendMessage(self,CurrentGroupId,message_content):
+        self.message_content=self.message_entry.get()
+        print("Da lay duoc message",self.message_content)
+        self.appController.sendMessage(CurrentGroupId,self.message_content)
+       
+    #Update nguyen khung chat
+    def Update_new_message(self,CurrentGroupId,message):
+        group_id=message[2]
+        message_type=message[3]
+        sender_id=message[1]
+        sender_id=str(sender_id)
+        message_content=message[4]
+        is_self=False
+        if(sender_id==self.appController.user_info['user_id']):
+           
+            is_self=True
+        print("print",sender_id)   
+        print("Print userinfo",self.appController.user_info['user_id'])
+        # if(group_id==CurrentGroupId):
+        if message_type =="TEXT":
+                print("Da chay den day")
+                self.display_message(self.message_frame,message_content,is_self)
+                pass
+        elif message_type =="FILE":
+                pass
+        elif message_type =="IMAGE":
+                pass
+      
+    
+    def Update_all_message(self,CurrentGroupId,messageList):
+        self.message_frame = CTkFrame(self.message_canvas, fg_color='white')
+        self.message_canvas.create_window((0, 0), window=self.message_frame, anchor='nw')
+        for message in messageList: 
+            print("Dan thuc hien lenh update_new_message")
+            self.Update_new_message(CurrentGroupId,message)
+            
+        # print(message)
+    
+    
     def update_group_list(self,new_group_list):
         self.group_list=new_group_list
         print("Danh sach Group duoc cap nhap la:",self.group_list)
@@ -195,15 +231,18 @@ class GroupChat_frame(CTkFrame):
         # Hiển thị danh sách nhóm
         groups = self.appController.Group_list  # Assuming Group_list is available in appController
         for group in groups:
-            group_id=group[0]
-            group_name=group[1]
+            group_id=group[1]
+            group_name=group[0]
             self.create_group_item(groups_list, group_name,group_id)
-
-    def create_group_item(self, parent, group_name):
         # Tạo khung cho mỗi nhóm
+    def create_group_item(self, parent, group_name, group_id):
+        groupid=group_id
+        print(groupid)
         group_frame = CTkFrame(parent, fg_color='#ffffff', corner_radius=5)
         group_frame.pack(fill='x', padx=5, pady=5)
 
         # Nút tên nhóm
-        group_label = CTkButton(group_frame, text=group_name, text_color='black', font=('Arial', 16), anchor='w')
+        group_label = CTkButton(group_frame, text=group_name, text_color='black', font=('Arial', 16), anchor='w',)
+        group_label.pack(side='left', padx=5, pady=5)
+        group_label = CTkButton(group_frame, text="Chat", text_color='black', font=('Arial', 16), anchor='w',command=lambda:(self.appController.UpdateChatRequest(groupid)))
         group_label.pack(side='left', padx=5, pady=5)
