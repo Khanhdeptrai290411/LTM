@@ -11,7 +11,7 @@ import pickle
 live_account_lock = threading.Lock()
 
 HOST = 'localhost'
-PORT = 65434
+PORT = 65439
 FORMAT = 'utf-8'
 MAX_CONNECTIONS = 50
 OK = 'ok'
@@ -28,6 +28,8 @@ UPDATE_GROUP='update_group'
 CREATE_GROUP = 'create_group'
 UPDATE_GROUP_LIST='update_group_list'
 OPEN_WINDOW_CHAT='open_window_chat'
+NEW_MESSAGE='new_message'
+UPDATE_CHAT_MESSAGE='update_chat_message'
 
 # Thiết lập kết nối đến cơ sở dữ liệu
 db_conn = mysql.connector.connect(
@@ -51,6 +53,7 @@ ID=[]
 Ad=[]
 Conn=[]
 User_info=[]
+QueueMessage=[]
 def send_Clients(conn, clients_list):
     print("send client start")
     # Send the list of clients
@@ -356,8 +359,43 @@ def CreateGroup(conn, friend_selected, group_name):
 #Xu li tin nhan 
 def OpenWindowChat(conn,group_id):
     cursor.execute('SELECT * FROM Participant p JOIN `Group` g ON g.id=p.group_id where')
+def sendMessageToUser(conn,id_sender,type_message,group_id,content):
+    cursor.execute('INSERT INTO Message(id_sender,receiver,type,content) VALUES(%s,%s,%s,%s)',(id_sender,group_id,type_message,content))
+    db_conn.commit()
+    message_id = cursor.lastrowid
+    cursor.execute("SELECT * from Message WHERE id=%s",(message_id,))
 
-   
+    message_record=cursor.fetchone()
+    print(f"Message record: {message_record}")
+
+    cursor.execute("SELECT u.email FROM Participant p JOIN `Group` g ON g.id=p.group_id JOIN `User` u ON p.user_id=u.user_id WHERE g.ID=%s",(group_id,) )
+    ListUser=cursor.fetchall()
+    print("Day la list user",ListUser)
+    print("Test SendMEssage")
+    
+    
+    for row in Live_Account:
+            user_email = row['email']
+          
+            for user in ListUser :
+                if user_email==user[0]:
+                    conn_address = row['conn']
+                    conn_address.sendall(UPDATE_CHAT_MESSAGE.encode(FORMAT))
+                    # time.sleep(0.1)
+                    # dataSend=pickle.dumps(message_record)
+                    # conn_address.sendall(dataSend)
+    print("Hoan tat")
+
+
+def LoadMessage(conn,group_id):
+    
+    cursor.execute("SELECT * FROM Message where receiver=%s",(group_id,))
+    Message_List=cursor.fetchall()
+    print("Lay Tin nhan Load Message thanh cong",Message_List)
+    data=pickle.dumps(Message_List)
+    conn.sendall(data)
+
+    
 def handle_client(conn, addr):
     try:
         print(f"Client connected: {addr}")
@@ -425,11 +463,36 @@ def handle_client(conn, addr):
                     
                 update_group_list(conn)
             elif msg == SEND_MESSAGE:
-                print(f'nhan lenh open window chat tu ',conn)
+                print(f'nhan lenh send message chat tu ',conn)
                 conn.sendall(msg.encode(FORMAT))
                 print("Da gui xac nhan Send Message",conn)
                 group_id=conn.recv(1024).decode(FORMAT)  
                 print("Da nhan id_group Message",group_id)
+                conn.sendall(group_id.encode(FORMAT))
+                type="TEXT"
+                id_sender=conn.recv(1024).decode(FORMAT)
+                conn.sendall(id_sender.encode(FORMAT))
+                content=conn.recv(1024).decode(FORMAT)
+                conn.sendall(content.encode(FORMAT))
+                print("Hoan tat qua trinh send message")
+                sendMessageToUser(conn,id_sender,type,group_id,content)
+            elif msg == UPDATE_CHAT_MESSAGE:
+                print(f'nhan lenh update chat tu ',conn)
+                conn.sendall(msg.encode(FORMAT))
+                conn.recv(1024)
+                conn.sendall(msg.encode(FORMAT))
+                groupid=conn.recv(1024).decode(FORMAT)
+                
+                
+                #Da nhan recv
+                LoadMessage(conn,groupid)
+
+            # elif msg == NEW_MESSAGE:
+                
+                
+                
+                
+                
 
                                   
            

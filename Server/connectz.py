@@ -14,10 +14,10 @@ cursor = db_config.cursor()
 # Q1 = 'CREATE TABLE IF NOT EXISTS User(user_id INT PRIMARY KEY AUTO_INCREMENT, user_name VARCHAR(50), email VARCHAR(50) UNIQUE, password_hash VARCHAR(255),ip_address VARCHAR(50), status BOOLEAN DEFAULT TRUE, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)'
 # Q2 = 'CREATE TABLE IF NOT EXISTS `Group` (ID INT PRIMARY KEY AUTO_INCREMENT, group_name VARCHAR(50), created_time DATETIME, creator_id INT, FOREIGN KEY (creator_id) REFERENCES User(user_id))'
 # Q3 = 'CREATE TABLE IF NOT EXISTS Participant(ID INT PRIMARY KEY AUTO_INCREMENT, group_id INT, user_id INT, FOREIGN KEY (group_id) REFERENCES `Group`(ID), FOREIGN KEY (user_id) REFERENCES User(user_id))'
-# Q4 = 'CREATE TABLE IF NOT EXISTS Message(ID INT PRIMARY KEY AUTO_INCREMENT, id_sender INT, receiver INT, Type VARCHAR(50), content VARCHAR(255), timestamp DATETIME, FOREIGN KEY (id_sender) REFERENCES User(user_id), FOREIGN KEY (receiver) REFERENCES `Group`(ID))'
+# Q4 = 'CREATE TABLE IF NOT EXISTS Message(ID INT PRIMARY KEY AUTO_INCREMENT, id_sender INT, receiver INT, Type VARCHAR(50), content VARCHAR(255), timestamp DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (id_sender) REFERENCES User(user_id), FOREIGN KEY (receiver) REFERENCES `Group`(ID))'
 # Q5 = 'DROP TABLE IF EXISTS Message, Participant, `Group`, User'
 
-
+#CO THAY DOI timestamp
 
 # cursor.execute(Q1)
 # cursor.execute(Q2)
